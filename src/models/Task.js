@@ -72,6 +72,14 @@ const TaskSchema = new mongoose.Schema(
         },
       },
     ],
+    estimatedHours: {
+      type: Number,
+      min: 0,
+    },
+    customFields: {
+      type: mongoose.Schema.Types.Mixed,
+      default: {},
+    },
   },
   {
     timestamps: true,

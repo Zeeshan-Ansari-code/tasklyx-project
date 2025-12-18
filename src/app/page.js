@@ -1,8 +1,23 @@
+"use client";
+
+import { useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { Kanban, Users, Zap, Shield } from "lucide-react";
+import { useAuth } from "@/context/AuthContext";
 
 export default function Home() {
+  const router = useRouter();
+  const { user } = useAuth();
+
+  // Redirect to dashboard if already logged in
+  useEffect(() => {
+    if (user) {
+      router.push("/dashboard");
+    }
+  }, [user, router]);
+
   const features = [
     {
       icon: Kanban,
@@ -40,12 +55,14 @@ export default function Home() {
             The modern way to manage your team's work.
           </p>
           <div className="flex gap-4 justify-center mt-8">
-            <Link href="/dashboard">
+            <Link href="/register">
               <Button size="lg">Get Started</Button>
             </Link>
-            <Button variant="outline" size="lg">
-              Learn More
-            </Button>
+            <Link href="/login">
+              <Button variant="outline" size="lg">
+                Login
+              </Button>
+            </Link>
           </div>
         </div>
 
@@ -96,7 +113,7 @@ export default function Home() {
           <p className="text-lg mb-8 opacity-90">
             Join thousands of teams already using Tasklyx
           </p>
-          <Link href="/dashboard">
+          <Link href="/register">
             <Button size="lg" variant="secondary">
               Start Free Trial
             </Button>

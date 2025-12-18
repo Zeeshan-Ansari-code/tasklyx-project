@@ -1,124 +1,86 @@
+"use client";
+
+import { useState, useEffect } from "react";
+import Link from "next/link";
 import { LayoutDashboard, TrendingUp, Users, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
+import { useAuth } from "@/context/AuthContext";
+import { formatDate } from "@/lib/utils";
+import { toast } from "sonner";
 
 export default function DashboardPage() {
-  const stats = [
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [stats, setStats] = useState({
+    totalBoards: 0,
+    activeTasks: 0,
+    teamMembers: 0,
+    completionRate: 0,
+  });
+  const [recentBoards, setRecentBoards] = useState([]);
+  const [recentActivity, setRecentActivity] = useState([]);
+  const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchDashboardData();
+    }
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    if (!user?.id) return;
+
+    try {
+      setLoading(true);
+      const res = await fetch(`/api/dashboard?userId=${user.id}`);
+      const data = await res.json();
+
+      if (res.ok) {
+        setStats(data.stats || stats);
+        setRecentBoards(data.recentBoards || []);
+        setRecentActivity(data.recentActivity || []);
+        setUpcomingDeadlines(data.upcomingDeadlines || []);
+      } else {
+        toast.error(data.message || "Failed to fetch dashboard data");
+      }
+    } catch (error) {
+      toast.error("Failed to fetch dashboard data");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const statsData = [
     {
       title: "Total Boards",
-      value: "12",
-      change: "+2 this week",
+      value: stats.totalBoards.toString(),
+      change: `${stats.totalBoards} board${stats.totalBoards !== 1 ? "s" : ""}`,
       icon: LayoutDashboard,
       color: "text-blue-500",
     },
     {
       title: "Active Tasks",
-      value: "48",
-      change: "+12% from last week",
+      value: stats.activeTasks.toString(),
+      change: `${stats.activeTasks} task${stats.activeTasks !== 1 ? "s" : ""} in progress`,
       icon: CheckCircle,
       color: "text-green-500",
     },
     {
       title: "Team Members",
-      value: "8",
-      change: "+1 new member",
+      value: stats.teamMembers.toString(),
+      change: `${stats.teamMembers} member${stats.teamMembers !== 1 ? "s" : ""}`,
       icon: Users,
       color: "text-purple-500",
     },
     {
       title: "Completion Rate",
-      value: "87%",
-      change: "+5% from last week",
+      value: `${stats.completionRate}%`,
+      change: `${stats.completionRate}% tasks completed`,
       icon: TrendingUp,
       color: "text-orange-500",
-    },
-  ];
-
-  const recentBoards = [
-    {
-      id: 1,
-      name: "Website Redesign",
-      description: "Redesigning company website",
-      color: "gradient-blue",
-      tasks: 15,
-      members: 5,
-    },
-    {
-      id: 2,
-      name: "Mobile App Development",
-      description: "Building iOS and Android apps",
-      color: "gradient-green",
-      tasks: 23,
-      members: 4,
-    },
-    {
-      id: 3,
-      name: "Marketing Campaign Q1",
-      description: "Q1 2024 marketing initiatives",
-      color: "gradient-purple",
-      tasks: 18,
-      members: 6,
-    },
-  ];
-
-  const recentActivity = [
-    {
-      id: 1,
-      user: "Sarah Johnson",
-      action: "completed task",
-      task: "Design homepage mockup",
-      time: "2 hours ago",
-      avatar: null,
-    },
-    {
-      id: 2,
-      user: "Mike Chen",
-      action: "added comment to",
-      task: "API Integration",
-      time: "4 hours ago",
-      avatar: null,
-    },
-    {
-      id: 3,
-      user: "Emily Davis",
-      action: "created new board",
-      task: "Product Launch",
-      time: "5 hours ago",
-      avatar: null,
-    },
-    {
-      id: 4,
-      user: "Alex Rodriguez",
-      action: "moved task",
-      task: "User Testing",
-      time: "Yesterday",
-      avatar: null,
-    },
-  ];
-
-  const upcomingDeadlines = [
-    {
-      id: 1,
-      title: "Complete UI Design",
-      board: "Website Redesign",
-      dueDate: "2024-01-15",
-      priority: "high",
-    },
-    {
-      id: 2,
-      title: "API Documentation",
-      board: "Mobile App",
-      dueDate: "2024-01-18",
-      priority: "medium",
-    },
-    {
-      id: 3,
-      title: "Marketing Assets",
-      board: "Marketing Campaign",
-      dueDate: "2024-01-20",
-      priority: "urgent",
     },
   ];
 
@@ -141,7 +103,7 @@ export default function DashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
+        {statsData.map((stat) => {
           const Icon = stat.icon;
           return (
             <Card key={stat.title}>
@@ -170,28 +132,43 @@ export default function DashboardPage() {
             <CardTitle>Recent Boards</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {recentBoards.map((board) => (
-              <div
-                key={board.id}
-                className="flex items-center gap-4 p-4 rounded-lg border hover:shadow-md transition-shadow cursor-pointer"
-              >
-                <div className={`h-16 w-16 rounded-lg ${board.color} shrink-0`} />
-                <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold truncate">{board.name}</h3>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {board.description}
-                  </p>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                    <span>{board.tasks} tasks</span>
-                    <span>•</span>
-                    <span>{board.members} members</span>
-                  </div>
-                </div>
+            {loading ? (
+              <div className="text-center py-4 text-muted-foreground">
+                Loading boards...
               </div>
-            ))}
-            <Button variant="outline" className="w-full">
-              View All Boards
-            </Button>
+            ) : recentBoards.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">
+                No boards yet. Create your first board!
+              </div>
+            ) : (
+              recentBoards.map((board) => (
+                <Link
+                  key={board._id}
+                  href={`/boards/${board._id}`}
+                  className="flex items-center gap-4 p-4 rounded-lg border hover:shadow-md transition-shadow cursor-pointer"
+                >
+                  <div
+                    className={`h-16 w-16 rounded-lg ${board.background} shrink-0`}
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-semibold truncate">{board.name}</h3>
+                    <p className="text-sm text-muted-foreground truncate">
+                      {board.description}
+                    </p>
+                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
+                      <span>{board.tasks} tasks</span>
+                      <span>•</span>
+                      <span>{board.members} members</span>
+                    </div>
+                  </div>
+                </Link>
+              ))
+            )}
+            <Link href="/boards">
+              <Button variant="outline" className="w-full">
+                View All Boards
+              </Button>
+            </Link>
           </CardContent>
         </Card>
 
@@ -201,23 +178,39 @@ export default function DashboardPage() {
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className="flex items-start gap-3">
-                <Avatar name={activity.user} size="sm" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm">
-                    <span className="font-semibold">{activity.user}</span>{" "}
-                    <span className="text-muted-foreground">
-                      {activity.action}
-                    </span>{" "}
-                    <span className="font-medium">{activity.task}</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {activity.time}
-                  </p>
-                </div>
+            {loading ? (
+              <div className="text-center py-4 text-muted-foreground">
+                Loading activity...
               </div>
-            ))}
+            ) : recentActivity.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">
+                No recent activity
+              </div>
+            ) : (
+              recentActivity.map((activity) => (
+                <div key={activity._id} className="flex items-start gap-3">
+                  <Avatar
+                    name={activity.userData?.name || activity.user}
+                    src={activity.userData?.avatar}
+                    size="sm"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm">
+                      <span className="font-semibold">
+                        {activity.userData?.name || activity.user}
+                      </span>{" "}
+                      <span className="text-muted-foreground">
+                        {activity.action}
+                      </span>{" "}
+                      <span className="font-medium">{activity.task}</span>
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      {activity.time}
+                    </p>
+                  </div>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
 
@@ -228,25 +221,42 @@ export default function DashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {upcomingDeadlines.map((task) => (
-                <div
-                  key={task.id}
-                  className="flex items-center justify-between p-4 rounded-lg border hover:shadow-md transition-shadow"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <h4 className="font-semibold">{task.title}</h4>
-                      <Badge variant={priorityColors[task.priority]} className="capitalize">
-                        {task.priority}
-                      </Badge>
-                    </div>
-                    <p className="text-sm text-muted-foreground mt-1">
-                      {task.board} • Due {new Date(task.dueDate).toLocaleDateString()}
-                    </p>
-                  </div>
-                  <Button size="sm">View</Button>
+              {loading ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  Loading deadlines...
                 </div>
-              ))}
+              ) : upcomingDeadlines.length === 0 ? (
+                <div className="text-center py-4 text-muted-foreground">
+                  No upcoming deadlines
+                </div>
+              ) : (
+                upcomingDeadlines.map((task) => (
+                  <div
+                    key={task._id}
+                    className="flex items-center justify-between p-4 rounded-lg border hover:shadow-md transition-shadow"
+                  >
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold">{task.title}</h4>
+                        <Badge
+                          variant={priorityColors[task.priority]}
+                          className="capitalize"
+                        >
+                          {task.priority}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {task.board} • Due {formatDate(task.dueDate)}
+                      </p>
+                    </div>
+                    {task.boardId && (
+                      <Link href={`/boards/${task.boardId}`}>
+                        <Button size="sm">View</Button>
+                      </Link>
+                    )}
+                  </div>
+                ))
+              )}
             </div>
           </CardContent>
         </Card>

@@ -48,6 +48,33 @@ const BoardSchema = new mongoose.Schema(
       enum: ["private", "team", "public"],
       default: "private",
     },
+    archived: {
+      type: Boolean,
+      default: false,
+    },
+    customFieldDefinitions: [
+      {
+        fieldId: {
+          type: String,
+          required: true,
+        },
+        name: {
+          type: String,
+          required: true,
+        },
+        type: {
+          type: String,
+          enum: ["text", "number", "date", "select", "checkbox", "url"],
+          required: true,
+        },
+        required: {
+          type: Boolean,
+          default: false,
+        },
+        options: [String], // For select type
+        defaultValue: mongoose.Schema.Types.Mixed,
+      },
+    ],
   },
   {
     timestamps: true,

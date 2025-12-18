@@ -4,7 +4,7 @@ const Card = ({ className, children, ...props }) => {
   return (
     <div
       className={cn(
-        "rounded-lg border bg-card text-card-foreground shadow-sm",
+        "rounded-xl border border-border/50 bg-card text-card-foreground shadow-sm hover:shadow-md transition-shadow duration-200",
         className
       )}
       {...props}
@@ -16,7 +16,7 @@ const Card = ({ className, children, ...props }) => {
 
 const CardHeader = ({ className, children, ...props }) => {
   return (
-    <div className={cn("flex flex-col space-y-1.5 p-6", className)} {...props}>
+    <div className={cn("flex flex-col space-y-1.5 p-6 pb-4", className)} {...props}>
       {children}
     </div>
   );
@@ -26,7 +26,7 @@ const CardTitle = ({ className, children, ...props }) => {
   return (
     <h3
       className={cn(
-        "text-2xl font-semibold leading-none tracking-tight",
+        "text-xl font-semibold leading-tight tracking-tight",
         className
       )}
       {...props}

@@ -14,11 +14,22 @@ const UserSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+    emailNotifications: {
+      type: Boolean,
+      default: true,
+    },
+    notificationPreferences: {
+      taskAssigned: { type: Boolean, default: true },
+      taskDeadline: { type: Boolean, default: true },
+      taskComment: { type: Boolean, default: true },
+      boardInvite: { type: Boolean, default: true },
+      dailyDigest: { type: Boolean, default: false },
+    },
     password: {
       type: String,
       required: [true, "Please provide a password"],
       minlength: 6,
-      select: false,
+      select: false, // Don't include password in queries by default
     },
     avatar: {
       type: String,
