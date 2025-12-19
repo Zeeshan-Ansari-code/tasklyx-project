@@ -154,7 +154,7 @@ export default function AIChatPage() {
     <div className="flex flex-col min-h-[calc(100vh-4rem)] bg-background">
       {/* Header */}
       <div className="sticky top-16 z-10 border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="flex items-center justify-between p-4 sm:p-6">
+        <div className="flex items-center justify-between pb-4 ">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
@@ -248,7 +248,7 @@ export default function AIChatPage() {
       </div>
 
       {/* Input */}
-      <div className="sticky bottom-0 border-t border-border bg-background/80 backdrop-blur-xl p-4 sm:p-6">
+      <div className="sticky bottom-0 border-t border-border bg-background/80 backdrop-blur-xl pt-4">
         <div className="max-w-4xl mx-auto">
           <div className="flex gap-3">
             <Input
