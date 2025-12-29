@@ -45,6 +45,29 @@ export default function BoardDetailPage() {
     }
   }, [showSettingsMenu]);
 
+  // Keyboard shortcut: E for edit board settings
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Only trigger if not typing in an input/textarea
+      if (
+        e.target.tagName === "INPUT" ||
+        e.target.tagName === "TEXTAREA" ||
+        e.target.isContentEditable
+      ) {
+        return;
+      }
+
+      // E key for edit board (open settings menu)
+      if (e.key === "e" || e.key === "E") {
+        e.preventDefault();
+        setShowSettingsMenu(!showSettingsMenu);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showSettingsMenu]);
+
   const fetchBoard = async () => {
     if (!boardId) {
       setLoading(false);

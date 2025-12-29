@@ -12,7 +12,7 @@ import SearchDropdown from "./SearchDropdown";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 
-const Navbar = ({ onMenuClick, user, sidebarOpen, sidebarCollapsed, sidebarWidth }) => {
+const Navbar = ({ onMenuClick, user, sidebarOpen, sidebarCollapsed, sidebarWidth, isDesktop = false }) => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showUserMenu, setShowUserMenu] = useState(false);
@@ -57,7 +57,7 @@ const Navbar = ({ onMenuClick, user, sidebarOpen, sidebarCollapsed, sidebarWidth
     <nav
       className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-backdrop-filter:bg-background/80 shadow-sm transition-all duration-300"
       style={{
-        paddingLeft: sidebarOpen ? `${sidebarWidth}px` : "0px",
+        paddingLeft: isDesktop && sidebarOpen ? `${sidebarWidth}px` : "0px",
       }}
     >
       <div className="flex h-16 items-center px-6 gap-4">

@@ -10,6 +10,7 @@ import {
   Settings,
   Plus,
   ChevronLeft,
+  X,
   FolderKanban,
   Calendar,
   BarChart3,
@@ -132,25 +133,39 @@ const Sidebar = ({ isOpen, onClose, collapsed: externalCollapsed, onCollapseChan
           <div className="flex items-center justify-between h-16 px-4 border-b border-border/50">
             {!collapsed && (
               <div className="flex items-center gap-2.5">
-                <div className="h-9 w-9 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center shadow-md">
+                <div className="h-9 w-9 rounded-xl bg-linear-to-br from-primary to-primary/80 flex items-center justify-center shadow-md">
                   <span className="text-primary-foreground font-bold text-lg">T</span>
                 </div>
                 <span className="font-bold text-lg tracking-tight">Tasklyx</span>
               </div>
             )}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleCollapse}
-              className="hidden lg:flex"
-            >
-              <ChevronLeft
-                className={cn(
-                  "h-4 w-4 transition-transform",
-                  collapsed && "rotate-180"
-                )}
-              />
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Close button for mobile */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onClose}
+                className="lg:hidden"
+                title="Close sidebar"
+              >
+                <X className="h-5 w-5" />
+              </Button>
+              {/* Collapse button for desktop */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleCollapse}
+                className="hidden lg:flex"
+                title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                <ChevronLeft
+                  className={cn(
+                    "h-4 w-4 transition-transform",
+                    collapsed && "rotate-180"
+                  )}
+                />
+              </Button>
+            </div>
           </div>
 
           {/* Navigation */}

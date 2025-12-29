@@ -74,9 +74,12 @@ export default function AIChatPage() {
           errorContent = `I'm sorry, but the Gemini API quota has been exceeded. This usually happens when you've used up your free tier limit.${retryTime}\n\nTo continue using AI features, you can:\n1. Wait for the quota to reset (usually 24 hours)\n2. Upgrade your Gemini API plan at https://ai.google.dev/pricing\n3. Check your usage at https://ai.dev/usage`;
           
           toastMessage = `API Quota Exceeded${retryTime}`;
-        } else if (data.error?.includes("GEMINI_API_KEY") || data.message?.includes("not enabled")) {
-          errorContent = "I'm sorry, I encountered an error. Please make sure GEMINI_API_KEY is set in your .env.local file and restart your development server.";
+        } else if (data.error?.includes("HUGGINGFACE_API_KEY") || data.message?.includes("not enabled")) {
+          errorContent = "I'm sorry, I encountered an error. Please make sure HUGGINGFACE_API_KEY is set in your .env.local file and restart your development server.";
           toastMessage = "AI is not enabled. Please check your API key configuration.";
+        } else if (data.error?.includes("DNS resolution failed") || data.error?.includes("ENOTFOUND")) {
+          errorContent = data.error + "\n\nSee FIX_DNS_WINDOWS.md for detailed instructions to fix Windows DNS issues.";
+          toastMessage = "DNS Resolution Failed";
         } else if (data.error) {
           errorContent = `I'm sorry, I encountered an error: ${data.error}`;
           toastMessage = data.message || "Failed to get AI response";
@@ -109,11 +112,18 @@ export default function AIChatPage() {
       let errorContent = "I'm sorry, I encountered an error. Please check your connection and try again.";
       let toastMessage = "Failed to get AI response";
       
-      if (error.message?.includes("fetch") || error.message?.includes("network")) {
-        errorContent = "I'm sorry, I couldn't connect to the server. Please check your internet connection and try again.";
-        toastMessage = "Connection Error";
+      // Check for specific error types
+      if (error.message?.includes("fetch failed") || error.message?.includes("Failed to fetch") || error.name === "TypeError") {
+        errorContent = "I'm sorry, I couldn't connect to the server. This could be due to:\n\n• Network connectivity issues\n• Server timeout (if deployed, check your hosting platform's timeout limits)\n• API configuration issues\n\nPlease check:\n1. Your internet connection\n2. That API keys are set in your production environment variables\n3. Your hosting platform's timeout settings (Vercel: 10s Hobby, 60s Pro)\n\nTry again in a moment.";
+        toastMessage = "Connection Error - Check Configuration";
+      } else if (error.message?.includes("timeout") || error.message?.includes("AbortError")) {
+        errorContent = "I'm sorry, the request timed out. The AI service took too long to respond. This might happen if:\n\n• The AI service is slow or overloaded\n• Your hosting platform has a short timeout limit\n\nPlease try again, or consider using a faster AI model.";
+        toastMessage = "Request Timeout";
+      } else if (error.message?.includes("network") || error.message?.includes("ECONNREFUSED")) {
+        errorContent = "I'm sorry, I couldn't connect to the AI service. Please check:\n\n• Your internet connection\n• That the AI API service is accessible\n• Your API key configuration";
+        toastMessage = "Network Error";
       } else if (error.message) {
-        errorContent = `I'm sorry, I encountered an error: ${error.message}`;
+        errorContent = `I'm sorry, I encountered an error: ${error.message}\n\nIf this persists, please check:\n• Your API keys are correctly set\n• Your hosting platform allows external API calls\n• The AI service is operational`;
       }
       
       toast.error(toastMessage);

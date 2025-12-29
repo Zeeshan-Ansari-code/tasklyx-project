@@ -2,6 +2,7 @@
 
 import { useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Button from "@/components/ui/Button";
 import { Kanban, Users, Zap, Shield } from "lucide-react";
@@ -67,9 +68,17 @@ export default function Home() {
         </div>
 
         {/* Screenshot/Demo */}
-        <div className="mt-16 rounded-lg border shadow-2xl overflow-hidden max-w-5xl mx-auto">
-          <div className="aspect-video bg-gradient-blue flex items-center justify-center">
-            <Kanban className="h-32 w-32 text-white/50" />
+        <div className="mt-16 rounded-lg border shadow-2xl overflow-hidden max-w-5xl mx-auto bg-muted/30">
+          <div className="relative w-full flex items-center justify-center">
+            <Image
+              src="/Dashboard.PNG"
+              alt="Tasklyx Dashboard Preview"
+              width={1920}
+              height={1080}
+              className="w-full h-auto object-contain"
+              priority
+              sizes="(max-width: 1280px) 100vw, 1280px"
+            />
           </div>
         </div>
       </section>

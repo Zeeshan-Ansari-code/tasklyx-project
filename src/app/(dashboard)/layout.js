@@ -14,15 +14,31 @@ export default function DashboardLayout({ children }) {
   const { user, loading } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [isDesktop, setIsDesktop] = useState(false);
 
-  // Set sidebar open by default on desktop
+  // Handle responsive sidebar behavior
   useEffect(() => {
-    if (typeof window !== "undefined") {
-      const isDesktop = window.innerWidth >= 1024; // lg breakpoint
-      if (isDesktop) {
+    if (typeof window === "undefined") return;
+
+    const handleResize = () => {
+      const desktop = window.innerWidth >= 1024; // lg breakpoint
+      setIsDesktop(desktop);
+      if (desktop) {
+        // Always open sidebar on desktop
         setSidebarOpen(true);
       }
+    };
+
+    // Set initial state
+    const desktop = window.innerWidth >= 1024;
+    setIsDesktop(desktop);
+    if (desktop) {
+      setSidebarOpen(true);
     }
+
+    // Listen for resize events
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   // Redirect to login if not authenticated
@@ -60,6 +76,7 @@ export default function DashboardLayout({ children }) {
         sidebarOpen={sidebarOpen}
         sidebarCollapsed={sidebarCollapsed}
         sidebarWidth={sidebarWidth}
+        isDesktop={isDesktop}
       />
       
       <Sidebar
@@ -73,7 +90,7 @@ export default function DashboardLayout({ children }) {
       <main
         className="min-h-[calc(100vh-4rem)] transition-all duration-300 ease-in-out"
         style={{
-          paddingLeft: sidebarOpen ? `${sidebarWidth}px` : "0px",
+          paddingLeft: isDesktop && sidebarOpen ? `${sidebarWidth}px` : "0px",
         }}
       >
         <div className="container mx-auto p-6">

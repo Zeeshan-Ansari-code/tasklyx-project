@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { isAIEnabled, callAI } from "@/lib/ai";
 
-// Call AI for chat (supports both Gemini and Hugging Face)
+// Call AI for chat (Hugging Face API)
 async function callAIChat(message, conversationHistory = []) {
   // Build conversation context
   const systemMessage = `You are a helpful AI assistant for a project management application called Tasklyx. You help users with:
@@ -35,17 +35,32 @@ Be concise, helpful, and friendly. If asked about creating tasks, you can guide 
 
 export async function POST(request) {
   try {
-    if (!isAIEnabled()) {
+    // Check if AI is enabled
+    const aiEnabled = isAIEnabled();
+    if (!aiEnabled) {
       return NextResponse.json(
         {
-          message: "AI is not enabled. Please set GEMINI_API_KEY or HUGGINGFACE_API_KEY in environment variables.",
+          message: "AI is not enabled. Please set HUGGINGFACE_API_KEY in environment variables.",
           enabled: false,
+          error: "AI service not configured",
         },
         { status: 503 }
       );
     }
 
-    const body = await request.json();
+    // Parse request body with timeout protection
+    let body;
+    try {
+      body = await request.json();
+    } catch (parseError) {
+      return NextResponse.json(
+        {
+          message: "Invalid request format",
+          error: "Failed to parse request body",
+        },
+        { status: 400 }
+      );
+    }
     const { message, conversationHistory = [] } = body;
 
     if (!message || !message.trim()) {
@@ -66,6 +81,11 @@ export async function POST(request) {
     );
   } catch (error) {
     console.error("[AI Chat] Error:", error);
+    console.error("[AI Chat] Error details:", {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+    });
     
     // Handle quota/rate limit errors
     if (error.isQuotaError) {
@@ -81,10 +101,22 @@ export async function POST(request) {
       );
     }
     
+    // Handle network/timeout errors
+    const errorMessage = error.message || "Unknown error";
+    let userFriendlyMessage = "Failed to get AI response";
+    
+    if (errorMessage.includes("timeout") || errorMessage.includes("AbortError")) {
+      userFriendlyMessage = "Request timeout: The AI service took too long to respond. Please try again.";
+    } else if (errorMessage.includes("fetch failed") || errorMessage.includes("network") || errorMessage.includes("ECONNREFUSED") || errorMessage.includes("ENOTFOUND")) {
+      userFriendlyMessage = "Network error: Unable to connect to AI service. Please check your internet connection and API configuration.";
+    } else if (errorMessage.includes("API key") || errorMessage.includes("authentication")) {
+      userFriendlyMessage = "Authentication error: Please check your API key configuration.";
+    }
+    
     return NextResponse.json(
       {
-        message: "Failed to get AI response",
-        error: error.message,
+        message: userFriendlyMessage,
+        error: errorMessage,
         enabled: isAIEnabled(),
       },
       { status: 500 }

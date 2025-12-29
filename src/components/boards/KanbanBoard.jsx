@@ -66,6 +66,40 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
     fetchLists();
   }, [boardId]);
 
+  // Keyboard shortcut: T for new task
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Only trigger if not typing in an input/textarea
+      if (
+        e.target.tagName === "INPUT" ||
+        e.target.tagName === "TEXTAREA" ||
+        e.target.isContentEditable
+      ) {
+        return;
+      }
+
+      // T key for new task - trigger add task on first list
+      if (e.key === "t" || e.key === "T") {
+        e.preventDefault();
+        // Find the first list and trigger add task
+        if (lists.length > 0) {
+          // This will be handled by ListColumn component
+          // We'll use a custom event to trigger it
+          const firstListElement = document.querySelector(`[data-list-id="${lists[0]._id}"]`);
+          if (firstListElement) {
+            const addTaskButton = firstListElement.querySelector('[data-add-task-button]');
+            if (addTaskButton) {
+              addTaskButton.click();
+            }
+          }
+        }
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [lists]);
+
   // Pusher real-time updates
   useEffect(() => {
     if (!boardId || !pusherClient) {
@@ -492,7 +526,7 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
           </SortableContext>
 
           {isAddingList ? (
-            <div className="shrink-0 w-72 bg-muted/30 rounded-lg p-4">
+            <div className="shrink-0 w-72 bg-muted/30 rounded-lg p-4" data-add-section>
               <Input
                 placeholder="Enter list title..."
                 value={newListTitle}
@@ -507,6 +541,7 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
                 }}
                 autoFocus
                 className="mb-2"
+                data-list-input
               />
               <div className="flex gap-2">
                 <Button size="sm" onClick={handleAddList}>

@@ -54,6 +54,29 @@ export default function BoardsPage() {
     }
   }, [user, showArchived]);
 
+  // Keyboard shortcut: N for new board
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      // Only trigger if not typing in an input/textarea
+      if (
+        e.target.tagName === "INPUT" ||
+        e.target.tagName === "TEXTAREA" ||
+        e.target.isContentEditable
+      ) {
+        return;
+      }
+
+      // N key for new board
+      if (e.key === "n" || e.key === "N") {
+        e.preventDefault();
+        setShowCreateModal(true);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
+
   const fetchBoards = async () => {
     if (!user?.id) return;
 

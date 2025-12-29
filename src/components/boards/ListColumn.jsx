@@ -156,6 +156,7 @@ const ListColumn = ({
             }}
             autoFocus
             className="mb-3 bg-background"
+            data-task-input
           />
           <div className="flex gap-2">
             <Button size="sm" onClick={handleAddTask} className="flex-1">
@@ -180,6 +181,8 @@ const ListColumn = ({
             size="sm"
             className="w-full hover:bg-accent/50 transition-colors font-medium"
             onClick={() => setIsAddingTask(true)}
+            data-add-task-button
+            data-list-id={list._id}
           >
             <Plus className="h-4 w-4 mr-2" />
             Add a task

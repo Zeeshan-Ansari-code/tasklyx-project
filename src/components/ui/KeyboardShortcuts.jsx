@@ -25,13 +25,27 @@ const KeyboardShortcuts = () => {
         setShowModal(true);
       }
 
-      // Escape to close modals/dropdowns
+      // Escape to close modals/dropdowns and cancel editing
       if (e.key === "Escape") {
         // Close any open dropdowns or modals
         const activeElement = document.activeElement;
         if (activeElement && activeElement.blur) {
           activeElement.blur();
         }
+        
+        // Close task/list creation inputs
+        const taskInputs = document.querySelectorAll('[data-task-input], [data-list-input]');
+        taskInputs.forEach(input => {
+          if (input === activeElement) {
+            // Trigger blur or cancel event
+            input.blur();
+            // Try to find and click cancel button
+            const cancelButton = input.closest('[data-add-section]')?.querySelector('[data-cancel-button]');
+            if (cancelButton) {
+              cancelButton.click();
+            }
+          }
+        });
       }
     };
 

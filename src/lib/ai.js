@@ -18,17 +18,16 @@ const GEMINI_MODEL = process.env.GEMINI_MODEL || "gemini-2.0-flash-001";
 const HUGGINGFACE_MODEL = process.env.HUGGINGFACE_MODEL || "meta-llama/Llama-3.1-8B-Instruct";
 
 /**
- * Check if AI is enabled (supports both Gemini and Hugging Face)
+ * Check if AI is enabled (Hugging Face only)
  */
 export function isAIEnabled() {
-  return !!(GEMINI_API_KEY || HUGGINGFACE_API_KEY);
+  return !!HUGGINGFACE_API_KEY;
 }
 
 /**
  * Get the active AI provider
  */
 function getAIProvider() {
-  if (GEMINI_API_KEY) return "gemini";
   if (HUGGINGFACE_API_KEY) return "huggingface";
   return null;
 }
@@ -168,15 +167,49 @@ async function callHuggingFace(messages, options = {}) {
       ];
     }
     
-    // Make request to Hugging Face Chat Completions API
-    const response = await fetch(endpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Authorization": `Bearer ${HUGGINGFACE_API_KEY}`,
-      },
-      body: JSON.stringify(requestBody),
-    });
+    // Make request to Hugging Face Chat Completions API with timeout
+    // Vercel Hobby: 10s max, Pro: 60s max
+    // Using 25s to be safe on Pro plan (adjust to 8s for Hobby plan)
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // 25 second timeout (safe for Vercel Pro)
+    
+    let response;
+    try {
+      response = await fetch(endpoint, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${HUGGINGFACE_API_KEY}`,
+        },
+        body: JSON.stringify(requestBody),
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      console.error("[AI] Hugging Face fetch error:", {
+        name: fetchError.name,
+        message: fetchError.message,
+        cause: fetchError.cause,
+      });
+      
+      if (fetchError.name === 'AbortError') {
+        throw new Error("Request timeout: The AI service took too long to respond. Please try again.");
+      }
+      
+      // Check for DNS resolution errors (Windows-specific issue)
+      if (fetchError.cause?.code === 'ENOTFOUND' || fetchError.cause?.code === 'ENODATA') {
+        throw new Error(`DNS resolution failed for Hugging Face API. This is a Windows DNS issue.\n\n🔧 To fix:\n1. Open Command Prompt as Administrator\n2. Run: ipconfig /flushdns\n3. Run: netsh winsock reset\n4. Change DNS to 8.8.8.8 (Google DNS) or 1.1.1.1 (Cloudflare DNS)\n5. Restart your computer\n\nSee FIX_DNS_WINDOWS.md for detailed instructions.\n\nError: ${fetchError.cause.message}`);
+      }
+      
+      // More specific error messages
+      if (fetchError.message?.includes("fetch failed") || fetchError.message?.includes("network") || fetchError.cause) {
+        const causeInfo = fetchError.cause ? ` (${fetchError.cause.message || fetchError.cause})` : '';
+        throw new Error(`Network error: Unable to connect to Hugging Face API.${causeInfo}\n\nPlease check:\n1. Your server can reach https://api.huggingface.co\n2. Your API key is correct\n3. DNS resolution is working (try: nslookup api.huggingface.co)\n4. Your firewall/antivirus is not blocking the connection`);
+      }
+      
+      throw new Error(`Connection error: ${fetchError.message || "Failed to connect to AI service"}`);
+    }
     
     // Handle response
     if (!response.ok) {
@@ -262,36 +295,20 @@ async function callHuggingFace(messages, options = {}) {
 
 
 /**
- * Unified AI call function - uses Gemini or Hugging Face API
- * Prefers Gemini if available, falls back to Hugging Face
+ * Unified AI call function - uses Hugging Face API
  */
 export async function callAI(messages, options = {}) {
   if (!isAIEnabled()) {
-    throw new Error("AI is not enabled. Please set GEMINI_API_KEY or HUGGINGFACE_API_KEY in environment variables.");
+    throw new Error("AI is not enabled. Please set HUGGINGFACE_API_KEY in environment variables.");
   }
 
   const provider = getAIProvider();
   
-  try {
-    if (provider === "gemini") {
-      return await callGemini(messages, options);
-    } else if (provider === "huggingface") {
-      return await callHuggingFace(messages, options);
-    }
-  } catch (error) {
-    // If Gemini fails and Hugging Face is available, try fallback
-    if (provider === "gemini" && HUGGINGFACE_API_KEY && !error.isQuotaError) {
-      console.log("[AI] Gemini failed, falling back to Hugging Face");
-      try {
-        return await callHuggingFace(messages, options);
-      } catch (fallbackError) {
-        throw error; // Throw original error
-      }
-    }
-    throw error;
+  if (provider === "huggingface") {
+    return await callHuggingFace(messages, options);
   }
   
-  throw new Error("No AI provider available");
+  throw new Error("No AI provider available. Please set HUGGINGFACE_API_KEY in environment variables.");
 }
 
 /**
