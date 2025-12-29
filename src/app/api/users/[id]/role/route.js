@@ -13,7 +13,7 @@ export async function PUT(request, { params }) {
       resolvedParams = await params;
     }
     
-    const userId = resolvedParams?.id;
+    let userId = resolvedParams?.id;
     if (Array.isArray(userId)) {
       userId = userId[0];
     }
