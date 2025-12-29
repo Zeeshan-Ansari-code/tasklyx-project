@@ -20,6 +20,7 @@ import {
 import { cn } from "@/lib/utils";
 import Button from "../ui/Button";
 import { useAuth } from "@/context/AuthContext";
+import { isAdmin } from "@/lib/permissions";
 
 const Sidebar = ({ isOpen, onClose, collapsed: externalCollapsed, onCollapseChange }) => {
   const pathname = usePathname();
@@ -30,6 +31,9 @@ const Sidebar = ({ isOpen, onClose, collapsed: externalCollapsed, onCollapseChan
   
   // Use external collapsed state if provided, otherwise use internal
   const collapsed = externalCollapsed !== undefined ? externalCollapsed : internalCollapsed;
+  
+  // Check if user is admin
+  const userIsAdmin = isAdmin(user);
   
   useEffect(() => {
     if (user?.id) {
@@ -111,7 +115,7 @@ const Sidebar = ({ isOpen, onClose, collapsed: externalCollapsed, onCollapseChan
   ];
 
   // Add admin menu item if user is admin
-  if (isAdmin) {
+  if (userIsAdmin) {
     menuItems.push({
       title: "User Management",
       icon: Shield,
