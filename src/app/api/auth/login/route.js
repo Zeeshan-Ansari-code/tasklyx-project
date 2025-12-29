@@ -41,6 +41,7 @@ export async function POST(request) {
       name: user.name,
       email: user.email,
       avatar: user.avatar,
+      role: user.role,
       createdAt: user.createdAt,
     };
 

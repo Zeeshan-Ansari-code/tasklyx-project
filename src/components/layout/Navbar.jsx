@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, Bell, Search, Plus, LogOut, User as UserIcon, Sparkles } from "lucide-react";
+import { Menu, Bell, Search, Plus, LogOut, User as UserIcon } from "lucide-react";
 import Button from "../ui/Button";
 import Avatar from "../ui/Avatar";
 import Input from "../ui/Input";
@@ -150,20 +150,6 @@ const Navbar = ({ onMenuClick, user, sidebarOpen, sidebarCollapsed, sidebarWidth
             <Plus className="h-5 w-5" />
           </Button>
 
-          {/* AI Chat */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push("/ai-chat")}
-            className="relative gap-2 font-medium hover:bg-primary/10 transition-colors"
-            title="AI Assistant"
-          >
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="hidden sm:inline-block text-primary font-semibold tracking-tight">
-              AI
-            </span>
-          </Button>
-
           {/* Theme Toggle */}
           <ThemeToggle />
 
@@ -217,18 +203,6 @@ const Navbar = ({ onMenuClick, user, sidebarOpen, sidebarCollapsed, sidebarWidth
 
         {/* Mobile Right Section */}
         <div className="flex md:hidden items-center gap-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => router.push("/ai-chat")}
-            className="relative gap-1.5 font-medium hover:bg-primary/10 transition-colors"
-            title="AI Assistant"
-          >
-            <Sparkles className="h-4 w-4 text-primary" />
-            <span className="text-primary font-semibold tracking-tight text-sm">
-              AI
-            </span>
-          </Button>
           <ThemeToggle />
           <NotificationsDropdown />
           <div className="relative" ref={mobileMenuRef}>

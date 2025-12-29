@@ -2,10 +2,12 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Task from "@/models/Task";
 import List from "@/models/List";
+import User from "@/models/User";
 import mongoose from "mongoose";
 import { triggerPusherEvent } from "@/lib/pusher";
 import { createActivity } from "@/lib/activity";
 import { triggerWebhooks } from "@/lib/webhooks";
+import { canCreateTasks, canAssignTaskTo } from "@/lib/permissions";
 
 // GET all tasks for a list
 export async function GET(request, { params }) {
@@ -109,6 +111,42 @@ export async function POST(request, { params }) {
       );
     }
 
+    // Check permissions: Verify user can create tasks
+    if (userId) {
+      const currentUser = await User.findById(userId);
+      if (!currentUser) {
+        return NextResponse.json(
+          { message: "User not found" },
+          { status: 404 }
+        );
+      }
+
+      if (!canCreateTasks(currentUser)) {
+        return NextResponse.json(
+          { message: "You don't have permission to create tasks" },
+          { status: 403 }
+        );
+      }
+
+      // Check if user can assign to each assignee (if provided)
+      if (assignees && Array.isArray(assignees) && assignees.length > 0) {
+        const assigneeUsers = await User.find({
+          _id: { $in: assignees },
+        });
+
+        for (const assigneeUser of assigneeUsers) {
+          if (!canAssignTaskTo(currentUser, assigneeUser)) {
+            return NextResponse.json(
+              {
+                message: `You don't have permission to assign tasks to ${assigneeUser.name} (${assigneeUser.role})`,
+              },
+              { status: 403 }
+            );
+          }
+        }
+      }
+    }
+
     // Get current max position in the list
     const maxPosition = await Task.findOne({ list: id })
       .sort({ position: -1 })
@@ -124,6 +162,7 @@ export async function POST(request, { params }) {
       position,
       priority: priority || "medium",
       dueDate: dueDate || null,
+      assignees: assignees || [],
     });
 
     // Add task to list

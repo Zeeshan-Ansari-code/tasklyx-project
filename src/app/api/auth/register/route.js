@@ -7,7 +7,7 @@ export async function POST(request) {
   try {
     await connectDB();
 
-    const { name, email, password, recoveryAnswer } = await request.json();
+    const { name, email, password, recoveryAnswer, role } = await request.json();
 
     // Validation
     if (!name || !email || !password || !recoveryAnswer) {
@@ -36,12 +36,17 @@ export async function POST(request) {
     // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Validate role
+    const validRoles = ["admin", "manager", "team_member", "viewer"];
+    const userRole = role && validRoles.includes(role) ? role : "team_member";
+
     // Create user
     const user = await User.create({
       name,
       email,
       password: hashedPassword,
       recoveryAnswer: recoveryAnswer.trim().toLowerCase(),
+      role: userRole,
     });
 
     // Remove password from response

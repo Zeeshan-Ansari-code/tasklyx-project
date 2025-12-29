@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Plus, MoreVertical, Trash2, Sparkles } from "lucide-react";
+import { Plus, MoreVertical, Trash2 } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { SortableContext, verticalListSortingStrategy } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -9,7 +9,8 @@ import TaskCard from "./TaskCard";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
 import { cn } from "@/lib/utils";
-import AITaskModal from "../ai/AITaskModal";
+import { useAuth } from "@/context/AuthContext";
+import { canCreateTasks } from "@/lib/permissions";
 
 const ListColumn = ({
   list,
@@ -28,7 +29,6 @@ const ListColumn = ({
   const [isAddingTask, setIsAddingTask] = useState(false);
   const [newTaskTitle, setNewTaskTitle] = useState("");
   const [showMenu, setShowMenu] = useState(false);
-  const [showAIModal, setShowAIModal] = useState(false);
 
   const {
     setNodeRef,
@@ -175,44 +175,23 @@ const ListColumn = ({
           </div>
         </div>
       ) : (
-        <div className="mt-4 space-y-2">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="w-full hover:bg-accent/50 transition-colors font-medium"
-            onClick={() => setIsAddingTask(true)}
-            data-add-task-button
-            data-list-id={list._id}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Add a task
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="w-full hover:bg-primary/10 hover:border-primary/50 transition-colors"
-            onClick={() => setShowAIModal(true)}
-          >
-            <Sparkles className="h-4 w-4 mr-2" />
-            AI Create
-          </Button>
-        </div>
+        canCreate && (
+          <div className="mt-4 space-y-2">
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full hover:bg-accent/50 transition-colors font-medium"
+              onClick={() => setIsAddingTask(true)}
+              data-add-task-button
+              data-list-id={list._id}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Add a task
+            </Button>
+          </div>
+        )
       )}
 
-      <AITaskModal
-        isOpen={showAIModal}
-        onClose={() => setShowAIModal(false)}
-        onTaskCreated={(task) => {
-          // Task is already created by AITaskModal via API
-          // Just refresh the board to show the new task
-          onRefresh?.();
-          setShowAIModal(false);
-        }}
-        boardId={boardId}
-        boardTitle={boardTitle}
-        availableLists={availableLists}
-        defaultListId={list._id}
-      />
     </div>
   );
 };

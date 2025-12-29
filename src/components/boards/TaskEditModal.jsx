@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Calendar, Users, Flag, FileText, CheckCircle2, X, Search, MessageSquare, Send, Tag, Paperclip, Trash2, Upload, XCircle, Sparkles, Loader2 } from "lucide-react";
+import { Calendar, Users, Flag, FileText, CheckCircle2, X, Search, MessageSquare, Send, Tag, Paperclip, Trash2, Upload, XCircle, Loader2 } from "lucide-react";
 import Modal from "../ui/Modal";
 import Input from "../ui/Input";
 import Label from "../ui/Label";
@@ -14,6 +14,7 @@ import { formatDate, formatDateTime } from "@/lib/utils";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import TimeTracking from "./TimeTracking";
+import { canAssignTaskTo, canEditTasks, canDeleteTasks } from "@/lib/permissions";
 
 const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [], onUpdate }) => {
   const { user } = useAuth();
@@ -43,8 +44,6 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
   const [uploadingFile, setUploadingFile] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const fileInputRef = useRef(null);
-  const [suggestingAssignee, setSuggestingAssignee] = useState(false);
-  const [enhancingDescription, setEnhancingDescription] = useState(false);
 
   useEffect(() => {
     if (task && boardId) {
@@ -311,111 +310,6 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
     }
   };
 
-  const handleSuggestAssignee = async () => {
-    if (!task || !boardMembers?.length) return;
-
-    setSuggestingAssignee(true);
-    try {
-      const response = await fetch("/api/ai/suggest-assignee", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          task: {
-            title: formData.title,
-            description: formData.description,
-            priority: formData.priority,
-            dueDate: formData.dueDate,
-          },
-          boardMembers: boardMembers.map(m => ({
-            _id: m._id || m.id,
-            name: m.name,
-            email: m.email,
-          })),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 429 || data.isQuotaError) {
-          const retryTime = data.retryAfter ? ` Please try again in ${Math.ceil(data.retryAfter)} seconds.` : "";
-          toast.error(`API Quota Exceeded${retryTime}`, {
-            description: "You've reached your Gemini API free tier limit.",
-          });
-        } else {
-          toast.error(data.message || "Failed to suggest assignee");
-        }
-        return;
-      }
-
-      if (data.success && data.suggestion?.suggestedAssigneeId) {
-        const suggestedId = data.suggestion.suggestedAssigneeId;
-        if (!formData.assignees.includes(suggestedId)) {
-          setFormData({
-            ...formData,
-            assignees: [...formData.assignees, suggestedId],
-          });
-          toast.success(`AI suggested: ${data.suggestion.reason || "Best match"}`);
-        } else {
-          toast.info("Suggested assignee is already assigned");
-        }
-      } else {
-        toast.info("AI couldn't suggest an assignee. Please select manually.");
-      }
-    } catch (error) {
-      console.error("[AI Suggest Assignee] Error:", error);
-      toast.error("Failed to get AI suggestion");
-    } finally {
-      setSuggestingAssignee(false);
-    }
-  };
-
-  const handleEnhanceDescription = async () => {
-    if (!formData.description?.trim()) {
-      toast.error("Please enter a description first");
-      return;
-    }
-
-    setEnhancingDescription(true);
-    try {
-      const response = await fetch("/api/ai/enhance-description", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          description: formData.description,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!response.ok) {
-        if (response.status === 429 || data.isQuotaError) {
-          const retryTime = data.retryAfter ? ` Please try again in ${Math.ceil(data.retryAfter)} seconds.` : "";
-          toast.error(`API Quota Exceeded${retryTime}`, {
-            description: "You've reached your Gemini API free tier limit.",
-          });
-        } else {
-          toast.error(data.message || "Failed to enhance description");
-        }
-        return;
-      }
-
-      if (data.success && data.enhancedDescription) {
-        setFormData({
-          ...formData,
-          description: data.enhancedDescription,
-        });
-        toast.success("Description enhanced with AI!");
-      } else {
-        toast.error("Failed to enhance description");
-      }
-    } catch (error) {
-      console.error("[AI Enhance Description] Error:", error);
-      toast.error("Failed to enhance description");
-    } finally {
-      setEnhancingDescription(false);
-    }
-  };
 
   const priorityOptions = [
     { value: "low", label: "Low", color: "default" },
@@ -461,28 +355,6 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
         <div>
           <div className="flex items-center justify-between mb-2">
             <Label>Description</Label>
-            {formData.description && (
-              <Button
-                type="button"
-                variant="ghost"
-                size="sm"
-                onClick={handleEnhanceDescription}
-                disabled={enhancingDescription}
-                className="h-7 text-xs text-foreground hover:text-primary"
-              >
-                {enhancingDescription ? (
-                  <>
-                    <Loader2 className="h-3 w-3 mr-1 animate-spin text-primary" />
-                    Enhancing...
-                  </>
-                ) : (
-                  <>
-                    <Sparkles className="h-3 w-3 mr-1 text-primary" />
-                    Enhance with AI
-                  </>
-                )}
-              </Button>
-            )}
           </div>
           <Textarea
             value={formData.description}
@@ -607,23 +479,6 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
                   <Users className="h-4 w-4" />
                   Add Assignee
                 </button>
-                {boardMembers?.length > 0 && (
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleSuggestAssignee}
-                    disabled={suggestingAssignee}
-                    className="px-3 text-foreground"
-                    title="AI suggests best assignee"
-                  >
-                    {suggestingAssignee ? (
-                      <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                    ) : (
-                      <Sparkles className="h-4 w-4 text-primary" />
-                    )}
-                  </Button>
-                )}
               </div>
               
               {showAssigneeDropdown && (
@@ -654,7 +509,11 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
                           member.email
                             .toLowerCase()
                             .includes(assigneeSearch.toLowerCase());
-                        return !isAssigned && matchesSearch;
+                        
+                        // Check if current user can assign to this member
+                        const canAssign = user ? canAssignTaskTo(user, member) : false;
+                        
+                        return !isAssigned && matchesSearch && canAssign;
                       })
                       .map((member) => (
                         <button
@@ -689,18 +548,22 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
                         </button>
                       ))}
                     {boardMembers.filter(
-                      (member) =>
-                        !formData.assignees.includes(member._id || member) &&
-                        (!assigneeSearch ||
+                      (member) => {
+                        const isAssigned = formData.assignees.includes(member._id || member);
+                        const matchesSearch =
+                          !assigneeSearch ||
                           member.name
                             .toLowerCase()
                             .includes(assigneeSearch.toLowerCase()) ||
                           member.email
                             .toLowerCase()
-                            .includes(assigneeSearch.toLowerCase()))
+                            .includes(assigneeSearch.toLowerCase());
+                        const canAssign = user ? canAssignTaskTo(user, member) : false;
+                        return !isAssigned && matchesSearch && canAssign;
+                      }
                     ).length === 0 && (
                       <div className="px-3 py-4 text-center text-sm text-muted-foreground">
-                        No members available
+                        {user ? "No assignable members available" : "No members available"}
                       </div>
                     )}
                   </div>

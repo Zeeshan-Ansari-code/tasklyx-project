@@ -2,11 +2,14 @@ import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import Task from "@/models/Task";
 import List from "@/models/List";
+import Board from "@/models/Board";
+import User from "@/models/User";
 import mongoose from "mongoose";
 import { triggerPusherEvent } from "@/lib/pusher";
 import { notifyTaskAssigned } from "@/lib/notifications";
 import { createActivity } from "@/lib/activity";
 import { triggerWebhooks } from "@/lib/webhooks";
+import { canAssignTaskTo, canEditTasks, canDeleteTasks } from "@/lib/permissions";
 
 // GET single task
 export async function GET(request, { params }) {
@@ -197,6 +200,47 @@ export async function PUT(request, { params }) {
     // Check if assignees changed and notify new assignees
     console.log(`[Task Update] Checking assignees: assignees !== undefined = ${assignees !== undefined}`);
     if (assignees !== undefined) {
+      // Check permissions: Verify user can assign tasks
+      if (userId) {
+        const currentUser = await User.findById(userId);
+        if (!currentUser) {
+          return NextResponse.json(
+            { message: "User not found" },
+            { status: 404 }
+          );
+        }
+
+        // Check if user can edit this task
+        if (!canEditTasks(currentUser, oldTask)) {
+          return NextResponse.json(
+            { message: "You don't have permission to edit this task" },
+            { status: 403 }
+          );
+        }
+
+        // Check if user can assign to each new assignee
+        const newAssignees = (assignees || []).map((a) => {
+          const id = a._id || a;
+          return id.toString();
+        });
+
+        // Get all assignee users to check permissions
+        const assigneeUsers = await User.find({
+          _id: { $in: newAssignees },
+        });
+
+        for (const assigneeUser of assigneeUsers) {
+          if (!canAssignTaskTo(currentUser, assigneeUser)) {
+            return NextResponse.json(
+              {
+                message: `You don't have permission to assign tasks to ${assigneeUser.name} (${assigneeUser.role})`,
+              },
+              { status: 403 }
+            );
+          }
+        }
+      }
+
       // Handle both populated objects and ObjectIds
       const oldAssignees = (oldTask.assignees || []).map((a) => {
         const id = a._id || a;

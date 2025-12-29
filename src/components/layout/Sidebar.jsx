@@ -15,6 +15,7 @@ import {
   Calendar,
   BarChart3,
   UserCog,
+  Shield,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Button from "../ui/Button";
@@ -108,6 +109,15 @@ const Sidebar = ({ isOpen, onClose, collapsed: externalCollapsed, onCollapseChan
       href: "/settings",
     },
   ];
+
+  // Add admin menu item if user is admin
+  if (isAdmin) {
+    menuItems.push({
+      title: "User Management",
+      icon: Shield,
+      href: "/admin/users",
+    });
+  }
 
 
   return (

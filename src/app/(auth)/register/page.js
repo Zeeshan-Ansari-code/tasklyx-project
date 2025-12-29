@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Mail, Lock, User, Loader2, Eye, EyeOff } from "lucide-react";
+import { Mail, Lock, User, Loader2, Eye, EyeOff, Shield } from "lucide-react";
 import Button from "@/components/ui/Button";
 import Input from "@/components/ui/Input";
 import Label from "@/components/ui/Label";
+import Select from "@/components/ui/Select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { toast } from "sonner";
 
@@ -19,6 +20,7 @@ export default function RegisterPage() {
     password: "",
     confirmPassword: "",
     recoveryAnswer: "",
+    role: "team_member",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -49,6 +51,7 @@ export default function RegisterPage() {
           email: formData.email,
           password: formData.password,
           recoveryAnswer: formData.recoveryAnswer,
+          role: formData.role,
         }),
       });
 
@@ -121,6 +124,32 @@ export default function RegisterPage() {
                   required
                 />
               </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="role" required>
+                Role
+              </Label>
+              <div className="relative">
+                <Shield className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Select
+                  id="role"
+                  value={formData.role}
+                  onChange={(e) =>
+                    setFormData({ ...formData, role: e.target.value })
+                  }
+                  className="pl-10"
+                  required
+                >
+                  <option value="team_member">Team Member</option>
+                  <option value="manager">Manager</option>
+                  <option value="viewer">Viewer</option>
+                  <option value="admin">Admin</option>
+                </Select>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Note: Admin can change your role later if needed
+              </p>
             </div>
 
             <div className="space-y-2">
