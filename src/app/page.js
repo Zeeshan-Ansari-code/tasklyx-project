@@ -120,7 +120,7 @@ export default function Home() {
             Ready to get started?
           </h2>
           <p className="text-lg mb-8 opacity-90">
-            Join thousands of teams already using Tasklyx
+            Join teams already using Tasklyx
           </p>
           <Link href="/register">
             <Button size="lg" variant="secondary">
