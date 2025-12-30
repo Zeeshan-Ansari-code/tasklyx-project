@@ -40,22 +40,24 @@ export default function AIChatPage() {
     try {
       setIsLoadingMessages(true);
       // Get or create AI conversation
-      const convRes = await fetch(
-        `/api/ai/conversation?userId=${user.id}`
-      );
+      const convRes = await fetch(`/api/ai/conversation?userId=${user.id}`);
       const convData = await convRes.json();
 
       if (convRes.ok && convData.conversation) {
-        setConversationId(convData.conversation._id);
+        const newConversationId = convData.conversation._id;
+        setConversationId(newConversationId);
 
-        // Load messages
-        const messagesRes = await fetch(
-          `/api/messages/${convData.conversation._id}`
-        );
-        const messagesData = await messagesRes.json();
-
-        if (messagesRes.ok) {
-          setMessages(messagesData || []);
+        // Load messages in parallel if conversationId matches, otherwise fetch after
+        if (conversationId && conversationId === newConversationId.toString()) {
+          // Conversation already exists, load messages
+          const messagesRes = await fetch(`/api/messages/${newConversationId}`);
+          const messagesData = await messagesRes.json();
+          if (messagesRes.ok) {
+            setMessages(messagesData || []);
+          }
+        } else {
+          // New conversation, messages will be empty initially
+          setMessages([]);
         }
       }
     } catch (error) {

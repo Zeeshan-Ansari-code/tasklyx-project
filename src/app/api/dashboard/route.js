@@ -38,29 +38,56 @@ export async function GET(request) {
       );
     }
 
-    // Get all boards user is part of
+    // Get all boards user is part of (limit fields for performance)
     const boards = await Board.find({
       $or: [{ owner: userId }, { "members.user": userId }],
     })
+      .select("_id title description background owner members updatedAt")
       .populate("owner", "name email avatar")
       .populate("members.user", "name email avatar")
-      .sort({ updatedAt: -1 });
+      .sort({ updatedAt: -1 })
+      .lean();
 
     const boardIds = boards.map((b) => b._id);
 
-    // Get all tasks from user's boards
-    const allTasks = await Task.find({ board: { $in: boardIds } })
-      .populate("assignees", "name email avatar")
-      .populate({
-        path: "comments.user",
-        select: "name email avatar",
-      });
+    // Use database aggregation for stats instead of loading all tasks
+    const [taskStats, allTasksForDeadlines] = await Promise.all([
+      // Get task statistics using aggregation (much faster)
+      Task.aggregate([
+        { $match: { board: { $in: boardIds } } },
+        {
+          $group: {
+            _id: null,
+            totalTasks: { $sum: 1 },
+            completedTasks: {
+              $sum: { $cond: [{ $eq: ["$completed", true] }, 1, 0] }
+            },
+            activeTasks: {
+              $sum: { $cond: [{ $eq: ["$completed", false] }, 1, 0] }
+            },
+          },
+        },
+      ]),
+      // Only get tasks needed for upcoming deadlines (with dueDate, not completed)
+      Task.find({
+        board: { $in: boardIds },
+        dueDate: { $exists: true, $ne: null },
+        completed: false,
+      })
+        .select("_id title board dueDate priority")
+        .lean(),
+    ]);
 
-    // Calculate stats
+    const stats = taskStats[0] || {
+      totalTasks: 0,
+      completedTasks: 0,
+      activeTasks: 0,
+    };
+
     const totalBoards = boards.length;
-    const activeTasks = allTasks.filter((t) => !t.completed).length;
-    const completedTasks = allTasks.filter((t) => t.completed).length;
-    const totalTasks = allTasks.length;
+    const activeTasks = stats.activeTasks;
+    const completedTasks = stats.completedTasks;
+    const totalTasks = stats.totalTasks;
     const completionRate =
       totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
 
@@ -78,55 +105,60 @@ export async function GET(request) {
     });
     const teamMembers = memberSet.size;
 
+    // Get task counts per board using aggregation (more efficient)
+    const boardTaskCounts = await Task.aggregate([
+      { $match: { board: { $in: boardIds } } },
+      {
+        $group: {
+          _id: "$board",
+          taskCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    const taskCountMap = new Map(
+      boardTaskCounts.map((item) => [item._id.toString(), item.taskCount])
+    );
+
     // Get recent boards (last 3)
-    const recentBoards = boards.slice(0, 3).map((board) => {
-      const boardTasks = allTasks.filter(
-        (t) => t.board.toString() === board._id.toString()
-      );
-      return {
-        _id: board._id,
-        name: board.title,
-        description: board.description || "",
-        background: board.background || "bg-blue-500",
-        tasks: boardTasks.length,
-        members: (board.members?.length || 0) + (board.owner ? 1 : 0),
-        updatedAt: board.updatedAt,
-      };
-    });
+    const recentBoards = boards.slice(0, 3).map((board) => ({
+      _id: board._id,
+      name: board.title,
+      description: board.description || "",
+      background: board.background || "bg-blue-500",
+      tasks: taskCountMap.get(board._id.toString()) || 0,
+      members: (board.members?.length || 0) + (board.owner ? 1 : 0),
+      updatedAt: board.updatedAt,
+    }));
 
-    // Get upcoming deadlines (next 7 days, not completed)
+    // Get upcoming deadlines (next 7 days, not completed) - already filtered in query
     const now = new Date();
-    now.setHours(0, 0, 0, 0); // Set to start of today
+    now.setHours(0, 0, 0, 0);
     const nextWeek = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    nextWeek.setHours(23, 59, 59, 999); // Set to end of the day
+    nextWeek.setHours(23, 59, 59, 999);
 
-    const upcomingDeadlines = allTasks
+    const boardMap = new Map(
+      boards.map((b) => [b._id.toString(), { _id: b._id, title: b.title }])
+    );
+
+    const upcomingDeadlines = allTasksForDeadlines
       .filter((task) => {
-        if (!task?.dueDate || task?.completed) return false;
-        
+        if (!task?.dueDate) return false;
         const dueDate = new Date(task.dueDate);
         dueDate.setHours(0, 0, 0, 0);
-        
-        // Include tasks due today or in the next 7 days
         return dueDate >= now && dueDate <= nextWeek;
       })
-      .sort((a, b) => {
-        const dateA = new Date(a.dueDate);
-        const dateB = new Date(b.dueDate);
-        return dateA - dateB;
-      })
+      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
       .slice(0, 5)
       .map((task) => {
-        const board = boards.find(
-          (b) => b?._id?.toString() === task?.board?.toString()
-        );
+        const board = boardMap.get(task.board.toString());
         return {
-          _id: task?._id,
-          title: task?.title || "Untitled Task",
+          _id: task._id,
+          title: task.title || "Untitled Task",
           board: board?.title || "Unknown Board",
           boardId: board?._id,
-          dueDate: task?.dueDate,
-          priority: task?.priority || "medium",
+          dueDate: task.dueDate,
+          priority: task.priority || "medium",
         };
       });
 
@@ -193,43 +225,63 @@ export async function GET(request) {
       return new Date(date).toLocaleDateString();
     };
 
-    // Get recent activity from Activity model for all user's boards
+    // Get recent activity from Activity model for all user's boards (use lean for performance)
     const activities = await Activity.find({
       board: { $in: boardIds },
     })
       .populate("user", "name email avatar")
       .populate("board", "title")
       .sort({ createdAt: -1 })
-      .limit(50);
+      .limit(50)
+      .lean();
 
-    // Also include comments from tasks as activity
-    const commentActivities = [];
-    allTasks.forEach((task) => {
-      if (task?.comments && task.comments.length > 0) {
-        task.comments.forEach((comment) => {
-          if (comment?.user && comment?.createdAt) {
-            const board = boards.find(
-              (b) => b?._id?.toString() === task?.board?.toString()
-            );
-            commentActivities.push({
-              _id: `comment-${comment._id || comment.createdAt}`,
-              user: {
-                _id: comment.user._id,
-                name: comment.user.name,
-                email: comment.user.email,
-                avatar: comment.user.avatar,
-              },
-              action: "added comment to",
-              task: task?.title || "Untitled Task",
-              board: board?.title || "Unknown Board",
-              time: comment.createdAt,
-              createdAt: comment.createdAt,
-              type: "comment_added",
-            });
-          }
-        });
-      }
-    });
+    // Get recent comments as activity (more efficient query)
+    const recentComments = await Task.aggregate([
+      { $match: { board: { $in: boardIds }, comments: { $exists: true, $ne: [] } } },
+      { $unwind: "$comments" },
+      { $sort: { "comments.createdAt": -1 } },
+      { $limit: 20 },
+      {
+        $lookup: {
+          from: "users",
+          localField: "comments.user",
+          foreignField: "_id",
+          as: "commentUser",
+        },
+      },
+      { $unwind: { path: "$commentUser", preserveNullAndEmptyArrays: true } },
+      {
+        $project: {
+          _id: { $concat: ["comment-", { $toString: "$comments._id" }] },
+          user: {
+            _id: "$commentUser._id",
+            name: "$commentUser.name",
+            email: "$commentUser.email",
+            avatar: "$commentUser.avatar",
+          },
+          taskTitle: "$title",
+          boardId: "$board",
+          createdAt: "$comments.createdAt",
+        },
+      },
+    ]);
+
+    const boardMapForComments = new Map(
+      boards.map((b) => [b._id.toString(), b.title])
+    );
+
+    const commentActivities = recentComments
+      .filter((item) => item.user?._id)
+      .map((item) => ({
+        _id: item._id,
+        user: item.user,
+        action: "added comment to",
+        task: item.taskTitle || "Untitled Task",
+        board: boardMapForComments.get(item.boardId.toString()) || "Unknown Board",
+        time: item.createdAt,
+        createdAt: item.createdAt,
+        type: "comment_added",
+      }));
 
     // Combine activities and comments, then sort by time
     const allActivities = [

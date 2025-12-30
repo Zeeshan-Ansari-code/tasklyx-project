@@ -43,11 +43,21 @@ export async function GET(request) {
     }
 
     const boards = await Board.find(query)
+      .select("_id title description background owner members isFavorite visibility archived updatedAt createdAt")
       .populate("owner", "name email avatar")
       .populate("members.user", "name email avatar")
-      .sort({ updatedAt: -1 });
+      .sort({ updatedAt: -1 })
+      .lean(); // Use lean() for better performance
 
-    return NextResponse.json({ boards }, { status: 200 });
+    return NextResponse.json(
+      { boards },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "private, max-age=10", // Cache for 10 seconds
+        },
+      }
+    );
   } catch (error) {
     return NextResponse.json(
       { message: "Internal server error" },

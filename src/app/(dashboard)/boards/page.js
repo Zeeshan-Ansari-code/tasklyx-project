@@ -52,7 +52,8 @@ export default function BoardsPage() {
     if (user?.id) {
       fetchBoards();
     }
-  }, [user, showArchived]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id, showArchived]); // Only depend on user.id, not entire user object
 
   // Keyboard shortcut: N for new board
   useEffect(() => {

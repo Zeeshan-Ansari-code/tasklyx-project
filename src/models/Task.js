@@ -99,4 +99,12 @@ const TaskSchema = new mongoose.Schema(
   }
 );
 
+// Indexes for performance optimization
+TaskSchema.index({ board: 1, completed: 1 });
+TaskSchema.index({ board: 1, dueDate: 1, completed: 1 });
+TaskSchema.index({ list: 1, position: 1 });
+TaskSchema.index({ assignees: 1, completed: 1 });
+TaskSchema.index({ board: 1, status: 1 });
+TaskSchema.index({ dueDate: 1, completed: 1 });
+
 export default mongoose.models.Task || mongoose.model("Task", TaskSchema);

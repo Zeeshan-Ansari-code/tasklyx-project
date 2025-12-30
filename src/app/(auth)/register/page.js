@@ -10,9 +10,11 @@ import Label from "@/components/ui/Label";
 import Select from "@/components/ui/Select";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/Card";
 import { toast } from "sonner";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -71,7 +73,7 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className={`min-h-screen flex items-center justify-center transition-all duration-500 ease-in-out ${theme === "light" ? "bg-linear-to-br from-sky-50 via-blue-50 to-indigo-50" : "bg-background"} p-4`}>
       <Card className="w-full max-w-4xl">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">

@@ -50,77 +50,115 @@ export async function GET(request) {
 
     const memberIds = Array.from(allMembers);
 
-    // Get workload for each member
-    const workloadData = await Promise.all(
-      memberIds.map(async (memberId) => {
-        const member = await User.findById(memberId).select("name email avatar");
+    // Optimize: Use aggregation to get all task data at once
+    const [taskData, timeEntryData, userData] = await Promise.all([
+      // Aggregate tasks by assignee
+      Task.aggregate([
+        {
+          $match: {
+            board: { $in: boardIds },
+            assignees: { $in: memberIds },
+            completed: false,
+          },
+        },
+        { $unwind: "$assignees" },
+        {
+          $group: {
+            _id: "$assignees",
+            tasks: { $push: "$$ROOT" },
+            totalEstimatedHours: { $sum: { $ifNull: ["$estimatedHours", 0] } },
+            urgent: { $sum: { $cond: [{ $eq: ["$priority", "urgent"] }, 1, 0] } },
+            high: { $sum: { $cond: [{ $eq: ["$priority", "high"] }, 1, 0] } },
+            medium: { $sum: { $cond: [{ $eq: ["$priority", "medium"] }, 1, 0] } },
+            low: { $sum: { $cond: [{ $eq: ["$priority", "low"] }, 1, 0] } },
+          },
+        },
+      ]),
+      // Aggregate time entries
+      TimeEntry.aggregate([
+        {
+          $match: {
+            board: { $in: boardIds },
+            user: { $in: memberIds },
+          },
+        },
+        {
+          $group: {
+            _id: "$user",
+            totalLoggedHours: { $sum: "$hours" },
+          },
+        },
+      ]),
+      // Get all users at once
+      User.find({ _id: { $in: memberIds } }).select("_id name email avatar").lean(),
+    ]);
 
-        // Get assigned tasks
-        const assignedTasks = await Task.find({
-          board: { $in: boardIds },
-          assignees: memberId,
-          completed: false,
-        }).select("title priority dueDate estimatedHours");
+    // Create maps for quick lookup
+    const taskMap = new Map();
+    taskData.forEach((item) => {
+      const overdueCount = item.tasks.filter(
+        (t) => t.dueDate && new Date(t.dueDate) < new Date()
+      ).length;
+      taskMap.set(item._id.toString(), {
+        ...item,
+        overdueCount,
+      });
+    });
 
-        // Count tasks by priority
-        const tasksByPriority = {
-          urgent: assignedTasks.filter((t) => t.priority === "urgent").length,
-          high: assignedTasks.filter((t) => t.priority === "high").length,
-          medium: assignedTasks.filter((t) => t.priority === "medium").length,
-          low: assignedTasks.filter((t) => t.priority === "low").length,
-        };
-
-        // Get overdue tasks
-        const overdueTasks = assignedTasks.filter(
-          (t) => t.dueDate && new Date(t.dueDate) < new Date()
-        );
-
-        // Calculate estimated hours
-        const totalEstimatedHours = assignedTasks.reduce(
-          (sum, task) => sum + (task.estimatedHours || 0),
-          0
-        );
-
-        // Get logged hours for this user
-        const timeEntries = await TimeEntry.find({
-          board: { $in: boardIds },
-          user: memberId,
-        });
-
-        const totalLoggedHours = timeEntries.reduce(
-          (sum, entry) => sum + entry.hours,
-          0
-        );
-
-        // Calculate capacity (assuming 40 hours/week standard)
-        const weeklyCapacity = 40;
-        const currentLoad = totalEstimatedHours || assignedTasks.length * 2; // Default 2h per task if no estimate
-        const capacityPercentage = (currentLoad / weeklyCapacity) * 100;
-
-        return {
-          userId: memberId,
-          userName: member?.name || "Unknown",
-          userEmail: member?.email || "",
-          userAvatar: member?.avatar || null,
-          totalTasks: assignedTasks.length,
-          tasksByPriority,
-          overdueTasks: overdueTasks.length,
-          totalEstimatedHours: parseFloat(totalEstimatedHours.toFixed(2)),
-          totalLoggedHours: parseFloat(totalLoggedHours.toFixed(2)),
-          weeklyCapacity,
-          currentLoad: parseFloat(currentLoad.toFixed(2)),
-          capacityPercentage: parseFloat(capacityPercentage.toFixed(1)),
-          status:
-            capacityPercentage > 100
-              ? "overloaded"
-              : capacityPercentage > 80
-              ? "high"
-              : capacityPercentage > 50
-              ? "medium"
-              : "low",
-        };
-      })
+    const timeEntryMap = new Map(
+      timeEntryData.map((item) => [item._id.toString(), item.totalLoggedHours])
     );
+
+    const userMap = new Map(
+      userData.map((u) => [u._id.toString(), u])
+    );
+
+    // Build workload data
+    const workloadData = memberIds.map((memberId) => {
+      const memberIdStr = memberId.toString();
+      const member = userMap.get(memberIdStr);
+      const taskInfo = taskMap.get(memberIdStr);
+      const totalLoggedHours = timeEntryMap.get(memberIdStr) || 0;
+
+      const totalTasks = taskInfo?.tasks?.length || 0;
+      const totalEstimatedHours = taskInfo?.totalEstimatedHours || 0;
+      const tasksByPriority = taskInfo
+        ? {
+            urgent: taskInfo.urgent || 0,
+            high: taskInfo.high || 0,
+            medium: taskInfo.medium || 0,
+            low: taskInfo.low || 0,
+          }
+        : { urgent: 0, high: 0, medium: 0, low: 0 };
+      const overdueTasks = taskInfo?.overdueCount || 0;
+
+      const weeklyCapacity = 40;
+      const currentLoad = totalEstimatedHours || totalTasks * 2;
+      const capacityPercentage = (currentLoad / weeklyCapacity) * 100;
+
+      return {
+        userId: memberId,
+        userName: member?.name || "Unknown",
+        userEmail: member?.email || "",
+        userAvatar: member?.avatar || null,
+        totalTasks,
+        tasksByPriority,
+        overdueTasks,
+        totalEstimatedHours: parseFloat(totalEstimatedHours.toFixed(2)),
+        totalLoggedHours: parseFloat(totalLoggedHours.toFixed(2)),
+        weeklyCapacity,
+        currentLoad: parseFloat(currentLoad.toFixed(2)),
+        capacityPercentage: parseFloat(capacityPercentage.toFixed(1)),
+        status:
+          capacityPercentage > 100
+            ? "overloaded"
+            : capacityPercentage > 80
+            ? "high"
+            : capacityPercentage > 50
+            ? "medium"
+            : "low",
+      };
+    });
 
     // Sort by capacity percentage (highest first)
     workloadData.sort((a, b) => b.capacityPercentage - a.capacityPercentage);

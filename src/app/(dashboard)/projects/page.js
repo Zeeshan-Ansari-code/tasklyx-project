@@ -21,7 +21,8 @@ export default function ProjectsPage() {
     if (user?.id) {
       fetchBoards();
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Only depend on user.id, not entire user object
 
   const fetchBoards = async () => {
     if (!user?.id) return;

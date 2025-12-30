@@ -81,4 +81,10 @@ const BoardSchema = new mongoose.Schema(
   }
 );
 
+// Indexes for performance optimization
+BoardSchema.index({ owner: 1, updatedAt: -1 });
+BoardSchema.index({ "members.user": 1, updatedAt: -1 });
+BoardSchema.index({ archived: 1, updatedAt: -1 });
+BoardSchema.index({ owner: 1, "members.user": 1, archived: 1 });
+
 export default mongoose.models.Board || mongoose.model("Board", BoardSchema);

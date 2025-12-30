@@ -14,8 +14,10 @@ import {
   CardTitle,
 } from "@/components/ui/Card";
 import { toast } from "sonner";
+import { useTheme } from "@/context/ThemeContext";
 
 export default function ForgotPasswordPage() {
+  const { theme } = useTheme();
   const [loading, setLoading] = useState(false);
   const [email, setEmail] = useState("");
   const [recoveryAnswer, setRecoveryAnswer] = useState("");
@@ -71,7 +73,7 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+    <div className={`min-h-screen flex items-center justify-center transition-all duration-500 ease-in-out ${theme === "light" ? "bg-linear-to-br from-sky-50 via-blue-50 to-indigo-50" : "bg-background"} p-4`}>
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">

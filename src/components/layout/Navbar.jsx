@@ -11,6 +11,7 @@ import NotificationsDropdown from "./NotificationsDropdown";
 import SearchDropdown from "./SearchDropdown";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 
 const Navbar = ({ onMenuClick, user, sidebarOpen, sidebarCollapsed, sidebarWidth, isDesktop = false }) => {
   const [showSearch, setShowSearch] = useState(false);
@@ -21,6 +22,7 @@ const Navbar = ({ onMenuClick, user, sidebarOpen, sidebarCollapsed, sidebarWidth
   const searchRef = useRef(null);
   const router = useRouter();
   const { logout } = useAuth();
+  const { theme } = useTheme();
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -55,7 +57,7 @@ const Navbar = ({ onMenuClick, user, sidebarOpen, sidebarCollapsed, sidebarWidth
 
   return (
     <nav
-      className="sticky top-0 z-40 w-full border-b border-border/40 bg-background/80 backdrop-blur-xl supports-backdrop-filter:bg-background/80 shadow-sm transition-all duration-300"
+      className={`sticky top-0 z-40 w-full border-b border-border/40 transition-all duration-500 ease-in-out ${theme === "light" ? "bg-linear-to-r from-sky-50/98 via-blue-50/98 to-indigo-50/98" : "bg-background/80"} backdrop-blur-xl supports-backdrop-filter:bg-background/80 shadow-sm`}
       style={{
         paddingLeft: isDesktop && sidebarOpen ? `${sidebarWidth}px` : "0px",
       }}

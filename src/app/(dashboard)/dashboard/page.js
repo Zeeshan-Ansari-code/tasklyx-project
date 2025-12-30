@@ -30,7 +30,8 @@ export default function DashboardPage() {
     if (user?.id) {
       fetchDashboardData();
     }
-  }, [user]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]); // Only depend on user.id, not entire user object
 
   const fetchDashboardData = async () => {
     if (!user?.id) return;

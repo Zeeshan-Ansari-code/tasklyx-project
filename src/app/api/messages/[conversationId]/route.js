@@ -26,14 +26,24 @@ export async function GET(request, { params }) {
       );
     }
 
+    // Paginate messages - only get last 50 for performance
     const messages = await Message.find({
       conversation: conversationId,
     })
-      .sort({ createdAt: 1 })
+      .select("text sender createdAt seenBy")
+      .sort({ createdAt: -1 })
+      .limit(50)
       .populate("sender", "name email avatar")
       .lean();
 
-    return NextResponse.json(messages);
+    // Reverse to get chronological order
+    messages.reverse();
+
+    return NextResponse.json(messages, {
+      headers: {
+        "Cache-Control": "private, max-age=5", // Cache for 5 seconds
+      },
+    });
   } catch (error) {
     console.error("[Get Messages] Error:", error);
     return NextResponse.json(

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, memo } from "react";
 import { Users, MoreVertical, Clock, Edit2, Trash2, CheckCircle2, Circle } from "lucide-react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
@@ -11,7 +11,7 @@ import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 
-const TaskCard = ({ task, onEdit, onDelete, onUpdate }) => {
+const TaskCard = memo(({ task, onEdit, onDelete, onUpdate }) => {
   const { user } = useAuth();
   const [showMenu, setShowMenu] = useState(false);
   const [togglingComplete, setTogglingComplete] = useState(false);
@@ -274,6 +274,8 @@ const TaskCard = ({ task, onEdit, onDelete, onUpdate }) => {
       </div>
     </div>
   );
-};
+});
+
+TaskCard.displayName = "TaskCard";
 
 export default TaskCard;

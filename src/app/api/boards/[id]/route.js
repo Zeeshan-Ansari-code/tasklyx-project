@@ -51,12 +51,14 @@ export async function GET(request, { params }) {
         populate: {
           path: "tasks",
           options: { sort: { position: 1 } },
+          select: "-comments -attachments", // Exclude heavy fields initially
           populate: {
             path: "assignees",
             select: "name email avatar",
           },
         },
-      });
+      })
+      .lean(); // Use lean() for better performance
 
     if (!board) {
       return NextResponse.json(
@@ -64,11 +66,16 @@ export async function GET(request, { params }) {
         { status: 404 }
       );
     }
-
-    // Convert Mongoose document to plain object to ensure proper JSON serialization
-    const boardData = board.toObject ? board.toObject() : board;
     
-    return NextResponse.json({ board: boardData }, { status: 200 });
+    return NextResponse.json(
+      { board },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "private, max-age=30", // Cache for 30 seconds
+        },
+      }
+    );
   } catch (error) {
     return NextResponse.json(
       { message: "Internal server error" },

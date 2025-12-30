@@ -21,12 +21,14 @@ import {
 import { cn } from "@/lib/utils";
 import Button from "../ui/Button";
 import { useAuth } from "@/context/AuthContext";
+import { useTheme } from "@/context/ThemeContext";
 import { isAdmin } from "@/lib/permissions";
 
 const Sidebar = ({ isOpen, onClose, collapsed: externalCollapsed, onCollapseChange }) => {
   const pathname = usePathname();
   const router = useRouter();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const [internalCollapsed, setInternalCollapsed] = useState(false);
   const [recentBoards, setRecentBoards] = useState([]);
   
@@ -143,7 +145,7 @@ const Sidebar = ({ isOpen, onClose, collapsed: externalCollapsed, onCollapseChan
       {/* Sidebar */}
       <aside
         className={cn(
-          "fixed top-0 left-0 z-50 h-screen bg-card/95 backdrop-blur-xl border-r border-border/50 transition-all duration-300 shadow-lg",
+          `fixed top-0 left-0 z-50 h-screen transition-all duration-500 ease-in-out ${theme === "light" ? "bg-linear-to-b from-sky-50/98 via-blue-50/98 to-indigo-50/98" : "bg-card"} backdrop-blur-xl border-r border-border/50 shadow-lg`,
           collapsed ? "w-16" : "w-64",
           isOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         )}

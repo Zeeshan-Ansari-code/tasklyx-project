@@ -69,13 +69,14 @@ export async function POST(request) {
     });
     await userMessage.populate("sender", "name email");
 
-    // Get conversation history (last 10 messages)
+    // Get conversation history (last 10 messages) - optimized query
     const recentMessages = await Message.find({
       conversation: conversation._id,
     })
+      .select("text sender createdAt")
       .sort({ createdAt: -1 })
       .limit(10)
-      .populate("sender", "name email")
+      .populate("sender", "name email _id")
       .lean();
 
     // Format messages for Hugging Face API
@@ -129,7 +130,7 @@ export async function POST(request) {
             Authorization: `Bearer ${huggingFaceApiKey}`,
             "Content-Type": "application/json",
           },
-          timeout: 30000,
+          timeout: 20000, // Reduced timeout from 30s to 20s
         }
       );
 

@@ -156,9 +156,16 @@ body {
 
 /* Smooth transitions */
 * {
-  transition-property: color, background-color, border-color;
+  transition-property: color, background-color, border-color, background-image;
   transition-duration: 0.2s;
   transition-timing-function: ease-in-out;
+}
+
+/* Smooth background gradient transitions */
+.bg-gradient-to-br,
+.bg-gradient-to-b,
+.bg-gradient-to-r {
+  transition: background 0.5s ease-in-out, background-image 0.5s ease-in-out;
 }
 
 /* Keyframe animations - Enhanced */
