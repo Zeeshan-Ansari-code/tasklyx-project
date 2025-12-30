@@ -157,7 +157,7 @@ export default function AIChatPage() {
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-7rem)] w-full -mx-6 px-6 -mb-6">
+    <div className="flex flex-col h-[calc(100vh-7rem)] w-full -mx-3 sm:-mx-4 lg:-mx-6 px-3 sm:px-4 lg:px-6 -mb-6">
       {/* Header */}
       <div className="flex items-center gap-3 pb-3 border-b border-border/50">
         <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center">
@@ -172,7 +172,7 @@ export default function AIChatPage() {
       </div>
 
       {/* Messages */}
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+      <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-0 sm:pr-2 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
         {messages.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-center py-12">
             <div className="h-16 w-16 rounded-full bg-primary flex items-center justify-center mb-4">

@@ -49,17 +49,20 @@ export default function ProjectsPage() {
   );
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 px-2 sm:px-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">Projects</h1>
-          <p className="text-muted-foreground text-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="space-y-1 sm:space-y-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">Projects</h1>
+          <p className="text-sm sm:text-base lg:text-lg text-muted-foreground">
             View and manage all your projects
           </p>
         </div>
-        <Link href="/boards?create=true">
-          <Button className="shadow-sm hover:shadow-md transition-shadow">
+        <Link href="/boards?create=true" className="w-full sm:w-auto">
+          <Button 
+            className="shadow-sm hover:shadow-md transition-shadow w-full sm:w-auto text-sm sm:text-base"
+            size="sm"
+          >
             <Plus className="h-4 w-4 mr-2" />
             New Project
           </Button>
