@@ -120,7 +120,7 @@ const ListColumn = ({
 
       {/* Tasks - Fixed height and scrollable with latest tasks on top */}
       <SortableContext items={taskIds} strategy={verticalListSortingStrategy}>
-        <div className="flex flex-col h-[calc(100vh-300px)] min-h-[400px] max-h-[600px]">
+        <div className="flex flex-col h-[30vh] max-h-[50vh]">
           <div 
             ref={tasksContainerRef}
             className="flex-1 overflow-y-auto pr-2 space-y-3 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent"
