@@ -101,10 +101,10 @@ export default function ResourcePage() {
       </div>
 
       {/* Filters */}
-      <Card className="border-border/50 shadow-sm">
+      <Card className="border-border/50 shadow-sm relative z-10">
         <CardContent className="p-5">
           <div className="flex items-center gap-4">
-            <div className="flex-1">
+            <div className="flex-1 relative z-10">
               <Label className="font-semibold mb-2">Board</Label>
               <Select
                 value={selectedBoard}
@@ -208,7 +208,7 @@ export default function ResourcePage() {
                       <Avatar
                         name={member.userName}
                         src={member.userAvatar}
-                        size="md"
+                        size="sm"
                       />
                       <div>
                         <p className="font-semibold">{member.userName}</p>

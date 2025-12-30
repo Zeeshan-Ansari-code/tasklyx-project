@@ -42,6 +42,12 @@ export async function GET(request) {
       });
     });
 
+    // Always include all users in the system for resource management
+    // This ensures we show all users even if they're not in boards
+    // Exclude AI user
+    const allUsers = await User.find({ email: { $ne: "ai@assistant.com" } }).select("_id");
+    allUsers.forEach((u) => allMembers.add(u._id.toString()));
+
     const memberIds = Array.from(allMembers);
 
     // Get workload for each member

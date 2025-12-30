@@ -161,7 +161,7 @@ export default function BoardDetailPage() {
     <div className="h-full flex flex-col">
       {/* Board Header - Enhanced with better spacing and visual hierarchy */}
       <div
-        className={`h-40 ${board.background} rounded-xl mb-8 p-8 text-white relative shadow-lg transition-all duration-300`}
+        className={` ${board.background} rounded-xl mb-8 p-8 text-white relative shadow-lg transition-all duration-300`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
@@ -321,8 +321,8 @@ export default function BoardDetailPage() {
 function getBoardMembers(board) {
   const members = [];
   
-  // Add owner
-  if (board.owner) {
+  // Add owner (exclude AI user)
+  if (board.owner && board.owner.email !== "ai@assistant.com") {
     members.push({
       _id: board.owner._id || board.owner,
       name: board.owner.name,
@@ -331,10 +331,10 @@ function getBoardMembers(board) {
     });
   }
   
-  // Add other members
+  // Add other members (exclude AI user)
   if (board.members && Array.isArray(board.members)) {
     board.members.forEach((member) => {
-      if (member.user) {
+      if (member.user && member.user.email !== "ai@assistant.com") {
         const userId = member.user._id || member.user;
         // Avoid duplicates (owner might also be in members)
         if (!members.find((m) => (m._id || m) === userId)) {

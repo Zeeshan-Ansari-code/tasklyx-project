@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
 import Badge from "@/components/ui/Badge";
 import Avatar from "@/components/ui/Avatar";
 import Button from "@/components/ui/Button";
+import { RecentBoardsSkeleton, RecentActivitySkeleton, UpcomingDeadlinesSkeleton } from "@/components/ui/DashboardSkeletons";
 import { useAuth } from "@/context/AuthContext";
 import { formatDate } from "@/lib/utils";
 import { toast } from "sonner";
@@ -135,23 +136,23 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-6 lg:grid-cols-3">
         {/* Recent Boards */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.22, ease: "easeOut" }}
+          className="lg:col-span-1"
         >
-          <Card>
+          {loading ? (
+            <RecentBoardsSkeleton />
+          ) : (
+          <Card className="h-[50vh]">
           <CardHeader>
             <CardTitle>Recent Boards</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {loading ? (
-              <div className="text-center py-4 text-muted-foreground">
-                Loading boards...
-              </div>
-            ) : recentBoards.length === 0 ? (
+            {recentBoards.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 No boards yet. Create your first board!
               </div>
@@ -186,88 +187,92 @@ export default function DashboardPage() {
             </Link>
           </CardContent>
           </Card>
+          )}
         </motion.div>
 
-        {/* Recent Activity */}
+        {/* Recent Activity - Fixed height and scrollable */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.24, ease: "easeOut" }}
+          className="lg:col-span-1"
         >
-        <Card>
-          <CardHeader>
+        {loading ? (
+          <RecentActivitySkeleton />
+        ) : (
+        <Card className="h-[50vh] flex flex-col">
+          <CardHeader className="shrink-0">
             <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            {loading ? (
-              <div className="text-center py-4 text-muted-foreground">
-                Loading activity...
-              </div>
-            ) : recentActivity.length === 0 ? (
+          <CardContent className="flex-1 overflow-hidden">
+            {recentActivity.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 No recent activity
               </div>
             ) : (
-              recentActivity.map((activity) => (
-                <div key={activity._id} className="flex items-start gap-3">
-                  <Avatar
-                    name={activity.userData?.name || activity.user}
-                    src={activity.userData?.avatar}
-                    size="sm"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm">
-                      <span className="font-semibold">
-                        {activity.userData?.name || activity.user}
-                      </span>{" "}
-                      <span className="text-muted-foreground">
-                        {activity.action}
-                      </span>{" "}
-                      <span className="font-medium">{activity.task}</span>
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {activity.time}
-                    </p>
+              <div className="h-full max-h-[500px] overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                {recentActivity.map((activity) => (
+                  <div key={activity._id} className="flex items-start gap-3">
+                    <Avatar
+                      name={activity.userData?.name || activity.user}
+                      src={activity.userData?.avatar}
+                      size="sm"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm">
+                        <span className="font-semibold">
+                          {activity.userData?.name || activity.user}
+                        </span>{" "}
+                        <span className="text-muted-foreground">
+                          {activity.action}
+                        </span>{" "}
+                        <span className="font-medium">{activity.task}</span>
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {activity.time}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
+        )}
         </motion.div>
 
-        {/* Upcoming Deadlines */}
+        {/* Upcoming Deadlines - Fixed height and scrollable */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.26, ease: "easeOut" }}
+          className="lg:col-span-1"
         >
-        <Card className="lg:col-span-2">
-          <CardHeader>
+        {loading ? (
+          <UpcomingDeadlinesSkeleton />
+        ) : (
+        <Card className="h-[50vh] flex flex-col">
+          <CardHeader className="shrink-0">
             <CardTitle>Upcoming Deadlines</CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-3">
-              {loading ? (
-                <div className="text-center py-4 text-muted-foreground">
-                  Loading deadlines...
-                </div>
-              ) : upcomingDeadlines.length === 0 ? (
-                <div className="text-center py-4 text-muted-foreground">
-                  No upcoming deadlines
-                </div>
-              ) : (
-                upcomingDeadlines.map((task) => (
+          <CardContent className="flex-1 overflow-hidden">
+            {upcomingDeadlines.length === 0 ? (
+              <div className="text-center py-4 text-muted-foreground">
+                No upcoming deadlines
+              </div>
+            ) : (
+              <div className="h-full max-h-[500px] overflow-y-auto pr-2 space-y-3 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                {upcomingDeadlines.map((task) => (
                   <div
                     key={task._id}
                     className="flex items-center justify-between p-4 rounded-lg border hover:shadow-md transition-shadow"
                   >
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold">{task.title}</h4>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-semibold truncate">{task.title}</h4>
                         <Badge
                           variant={priorityColors[task.priority]}
-                          className="capitalize"
+                          className="capitalize shrink-0"
                         >
                           {task.priority}
                         </Badge>
@@ -277,16 +282,17 @@ export default function DashboardPage() {
                       </p>
                     </div>
                     {task.boardId && (
-                      <Link href={`/boards/${task.boardId}`}>
+                      <Link href={`/boards/${task.boardId}`} className="shrink-0">
                         <Button size="sm">View</Button>
                       </Link>
                     )}
                   </div>
-                ))
-              )}
-            </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
+        )}
         </motion.div>
       </div>
     </div>

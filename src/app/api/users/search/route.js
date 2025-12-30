@@ -17,12 +17,13 @@ export async function GET(request) {
       );
     }
 
-    // Search users by name or email
+    // Search users by name or email (exclude AI user)
     const users = await User.find({
       $or: [
         { name: { $regex: query, $options: "i" } },
         { email: { $regex: query, $options: "i" } },
       ],
+      email: { $ne: "ai@assistant.com" },
     })
       .select("name email avatar")
       .limit(10);

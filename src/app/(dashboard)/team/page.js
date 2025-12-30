@@ -27,15 +27,29 @@ export default function TeamPage() {
 
     try {
       setLoading(true);
-      // Get all boards user is part of
-      const res = await fetch(`/api/boards?userId=${user.id}`);
-      const data = await res.json();
+      
+      // First, get all boards user is part of to get board members
+      const boardsRes = await fetch(`/api/boards?userId=${user.id}`);
+      const boardsData = await boardsRes.json();
 
-      if (res.ok) {
-        // Extract unique team members from all boards
-        const memberMap = new Map();
-        
-        (data.boards || []).forEach((board) => {
+      // Get all users in the system (for team page, show everyone)
+      let allUsers = [];
+      try {
+        const usersRes = await fetch(`/api/users/all`);
+        const usersData = await usersRes.json();
+        if (usersRes.ok && usersData.users) {
+          allUsers = usersData.users;
+        }
+      } catch (error) {
+        console.error("Failed to fetch all users:", error);
+        // Continue with board members only if this fails
+      }
+
+      // Extract unique team members from all boards
+      const memberMap = new Map();
+      
+      if (boardsRes.ok && boardsData.boards) {
+        (boardsData.boards || []).forEach((board) => {
           // Add owner
           if (board.owner) {
             const ownerId = board.owner._id?.toString() || board.owner.toString();
@@ -76,12 +90,30 @@ export default function TeamPage() {
             }
           });
         });
-
-        setTeamMembers(Array.from(memberMap.values()));
-      } else {
-        toast.error(data.message || "Failed to fetch team members");
       }
+
+      // If we got all users, add any that aren't in boards yet
+      // Filter out AI user
+      if (allUsers.length > 0) {
+        allUsers
+          .filter((userData) => userData.email !== "ai@assistant.com")
+          .forEach((userData) => {
+            const userId = userData.id?.toString() || userData._id?.toString();
+            if (!memberMap.has(userId)) {
+              memberMap.set(userId, {
+                _id: userData.id || userData._id,
+                name: userData.name,
+                email: userData.email,
+                avatar: userData.avatar,
+                boards: [],
+              });
+            }
+          });
+      }
+
+      setTeamMembers(Array.from(memberMap.values()));
     } catch (error) {
+      console.error("Failed to fetch team members:", error);
       toast.error("Failed to fetch team members");
     } finally {
       setLoading(false);

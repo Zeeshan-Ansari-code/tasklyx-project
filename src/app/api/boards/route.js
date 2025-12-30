@@ -35,7 +35,10 @@ export async function GET(request) {
       ],
     };
 
-    if (!includeArchived) {
+    // Explicitly filter archived status
+    if (includeArchived) {
+      query.archived = true;
+    } else {
       query.archived = { $ne: true };
     }
 

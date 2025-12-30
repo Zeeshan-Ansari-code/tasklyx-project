@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Calendar, Users, Flag, FileText, CheckCircle2, X, Search, MessageSquare, Send, Tag, Paperclip, Trash2, Upload, XCircle, Loader2 } from "lucide-react";
+import { Calendar, Users, Flag, FileText, CheckCircle2, X, Search, MessageSquare, Send, Tag, Paperclip, Trash2, Upload, XCircle, Loader2, Bot } from "lucide-react";
 import Modal from "../ui/Modal";
 import Input from "../ui/Input";
 import Label from "../ui/Label";
@@ -16,7 +16,7 @@ import { useAuth } from "@/context/AuthContext";
 import TimeTracking from "./TimeTracking";
 import { canAssignTaskTo, canEditTasks, canDeleteTasks } from "@/lib/permissions";
 
-const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [], onUpdate }) => {
+const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [], onUpdate, isCreating = false, defaultListId = null }) => {
   const { user } = useAuth();
   const [loading, setLoading] = useState(false);
   const [showAssigneeDropdown, setShowAssigneeDropdown] = useState(false);
@@ -33,6 +33,8 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
     priority: "medium",
     dueDate: "",
     completed: false,
+    status: "pending",
+    pauseReason: "",
     assignees: [],
     labels: [],
     customFields: {},
@@ -46,33 +48,55 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
   const fileInputRef = useRef(null);
 
   useEffect(() => {
-    if (task && boardId) {
-      // Extract assignee IDs
-      const assigneeIds = (task.assignees || []).map((assignee) => 
-        assignee._id || assignee
-      );
-      
-      setFormData({
-        title: task.title || "",
-        description: task.description || "",
-        list: task.list?._id || task.list || "",
-        priority: task.priority || "medium",
-        dueDate: task.dueDate
-          ? new Date(task.dueDate).toISOString().split("T")[0]
-          : "",
-        completed: task.completed || false,
-        assignees: assigneeIds,
-        labels: task.labels || [],
-        customFields: task.customFields || {},
-      });
+    if (isOpen) { // Only reset when modal opens
+      if (isCreating && boardId) {
+        // Initialize for creation mode - use defaultListId if provided, otherwise first list
+        const defaultList = defaultListId || (lists?.length > 0 ? lists[0]?._id : "");
+        setFormData({
+          title: "",
+          description: "",
+          list: defaultList,
+          priority: "medium",
+          dueDate: "",
+          completed: false,
+          status: "pending",
+          pauseReason: "",
+          assignees: [],
+          labels: [],
+          customFields: {},
+        });
+        setComments([]);
+        fetchCustomFieldDefinitions();
+      } else if (task && boardId) {
+        // Extract assignee IDs
+        const assigneeIds = (task?.assignees || []).map((assignee) => 
+          assignee?._id || assignee
+        );
+        
+        setFormData({
+          title: task?.title || "",
+          description: task?.description || "",
+          list: task?.list?._id || task?.list || "",
+          priority: task?.priority || "medium",
+          dueDate: task?.dueDate
+            ? new Date(task.dueDate).toISOString().split("T")[0]
+            : "",
+          completed: task?.completed || false,
+          status: task?.status || (task?.completed ? "done" : "pending"),
+          pauseReason: task?.pauseReason || "",
+          assignees: assigneeIds,
+          labels: task?.labels || [],
+          customFields: task?.customFields || {},
+        });
 
-      // Set comments
-      setComments(task.comments || []);
+        // Set comments
+        setComments(task?.comments || []);
 
-      // Fetch custom field definitions
-      fetchCustomFieldDefinitions();
+        // Fetch custom field definitions
+        fetchCustomFieldDefinitions();
+      }
     }
-  }, [task, boardId]);
+  }, [isOpen, task, boardId, isCreating, defaultListId, lists]);
 
   const fetchCustomFieldDefinitions = async () => {
     if (!boardId) return;
@@ -154,8 +178,122 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
     }
   };
 
+  const handleAICreate = async () => {
+    if (!formData.title.trim()) {
+      toast.error("Please enter a task description for AI to create");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/ai/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          conversationId: "ai-task-creation",
+          message: `Create a detailed task from this description: "${formData.title}". Include title, description, priority (low/medium/high/urgent), and any relevant details. Respond in JSON format with: {title, description, priority, dueDate (if mentioned), labels: []}`,
+          userId: user?.id,
+        }),
+      });
+
+      const data = await res.json();
+      if (res.ok && data.aiMessage?.text) {
+        try {
+          // Try to parse JSON from AI response
+          const aiText = data.aiMessage.text;
+          const jsonMatch = aiText.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            const parsed = JSON.parse(jsonMatch[0]);
+            setFormData({
+              ...formData,
+              title: parsed.title || formData.title,
+              description: parsed.description || formData.description || "",
+              priority: parsed.priority || formData.priority,
+              dueDate: parsed.dueDate ? new Date(parsed.dueDate).toISOString().split("T")[0] : formData.dueDate,
+              labels: parsed.labels || formData.labels,
+            });
+            toast.success("AI has generated task details!");
+          } else {
+            // If not JSON, try to extract information from text
+            const lines = aiText.split("\n");
+            let newDescription = "";
+            for (const line of lines) {
+              if (line.toLowerCase().includes("priority")) {
+                const priorityMatch = line.match(/(low|medium|high|urgent)/i);
+                if (priorityMatch) {
+                  setFormData({ ...formData, priority: priorityMatch[1].toLowerCase() });
+                }
+              } else if (!line.startsWith("#") && line.trim()) {
+                newDescription += line + "\n";
+              }
+            }
+            if (newDescription) {
+              setFormData({ ...formData, description: newDescription.trim() });
+            }
+            toast.success("AI has enhanced your task!");
+          }
+        } catch (parseError) {
+          // If parsing fails, use the AI response as description
+          setFormData({
+            ...formData,
+            description: data.aiMessage.text,
+          });
+          toast.success("AI has added a description to your task!");
+        }
+      } else {
+        toast.error("Failed to generate task with AI");
+      }
+    } catch (error) {
+      console.error("[AI Task Creation] Error:", error);
+      toast.error("Failed to create task with AI");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    if (isCreating) {
+      // Handle task creation
+      if (!formData.title.trim()) {
+        toast.error("Task title is required");
+        return;
+      }
+      if (!formData.list) {
+        toast.error("Please select a list");
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const taskData = {
+          title: formData.title.trim(),
+          description: formData.description || "",
+          priority: formData.priority,
+          status: formData.status || "pending",
+          assignees: formData.assignees,
+          labels: formData.labels,
+          customFields: formData.customFields,
+        };
+
+        if (formData.dueDate) {
+          taskData.dueDate = new Date(formData.dueDate).toISOString();
+        }
+
+        if (onUpdate) {
+          await onUpdate(taskData);
+        }
+      } catch (error) {
+        console.error("[Task Creation] Error:", error);
+        toast.error("Failed to create task");
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Handle task update
     if (!task) return;
 
     setLoading(true);
@@ -166,6 +304,8 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
         description: formData.description,
         priority: formData.priority,
         completed: formData.completed,
+        status: formData.status,
+        pauseReason: formData.status === "paused" ? formData.pauseReason : undefined,
         assignees: formData.assignees,
         labels: formData.labels,
         customFields: formData.customFields,
@@ -178,13 +318,13 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
         updateData.dueDate = null;
       }
 
-      if (formData.list && formData.list !== task.list?._id && formData.list !== task.list) {
+      if (formData.list && formData.list !== task?.list?._id && formData.list !== task?.list) {
         updateData.list = formData.list;
       }
 
-      console.log(`[TaskEditModal] Updating task ${task._id} with data:`, updateData);
+      console.log(`[TaskEditModal] Updating task ${task?._id} with data:`, updateData);
 
-      const res = await fetch(`/api/tasks/${task._id}`, {
+      const res = await fetch(`/api/tasks/${task?._id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(updateData),
@@ -201,7 +341,7 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
         onClose();
       } else {
         console.error(`[TaskEditModal] Error response:`, data);
-        toast.error(data.message || "Failed to update task");
+        toast.error(data?.message || "Failed to update task");
       }
     } catch (error) {
       console.error(`[TaskEditModal] Exception:`, error);
@@ -212,7 +352,7 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
   };
 
   const handleFileUpload = async (file) => {
-    if (!file || !task?._id) return;
+    if (!file || (!task?._id && !isCreating)) return;
 
     // Validate file size (max 10MB)
     const maxSize = 10 * 1024 * 1024;
@@ -318,21 +458,33 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
     { value: "urgent", label: "Urgent", color: "destructive" },
   ];
 
-  if (!task) return null;
+  if (!isCreating && !task) return null;
 
   return (
     <Modal 
       isOpen={isOpen} 
       onClose={onClose} 
-      title="Edit Task" 
+      title={isCreating ? "Create Task" : "Edit Task"} 
       size="lg"
       footer={
         <div className="flex gap-2 justify-end w-full">
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
+          {isCreating && (
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleAICreate}
+              disabled={loading || !formData.title.trim()}
+              className="bg-primary/10 hover:bg-primary/20 text-primary border-primary/20"
+            >
+              <Bot className="h-4 w-4 mr-2" />
+              {loading ? "Generating..." : "Create with AI"}
+            </Button>
+          )}
           <Button type="submit" form="task-edit-form" disabled={loading}>
-            {loading ? "Saving..." : "Save Changes"}
+            {loading ? (isCreating ? "Creating..." : "Saving...") : (isCreating ? "Create Task" : "Save Changes")}
           </Button>
         </div>
       }
@@ -340,13 +492,28 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
       <form id="task-edit-form" onSubmit={handleSubmit} className="space-y-6">
         {/* Title */}
         <div>
-          <Label required>Title</Label>
+          <div className="flex items-center justify-between mb-2">
+            <Label required>Title</Label>
+            {isCreating && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={handleAICreate}
+                disabled={loading || !formData.title.trim()}
+                className="text-primary hover:text-primary/80 hover:bg-primary/10"
+              >
+                <Bot className="h-4 w-4 mr-1" />
+                Create with AI
+              </Button>
+            )}
+          </div>
           <Input
             value={formData.title}
             onChange={(e) =>
               setFormData({ ...formData, title: e.target.value })
             }
-            placeholder="Task title"
+            placeholder={isCreating ? "Enter task description or let AI create it..." : "Task title"}
             required
           />
         </div>
@@ -369,13 +536,15 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
         {/* List Selection */}
         {lists && lists.length > 0 && (
           <div>
-            <Label>List</Label>
+            <Label required={isCreating}>List</Label>
             <Select
               value={formData.list}
               onChange={(e) =>
                 setFormData({ ...formData, list: e.target.value })
               }
+              required={isCreating}
             >
+              <option value="">Select a list</option>
               {lists.map((list) => (
                 <option key={list._id} value={list._id}>
                   {list.title}
@@ -498,6 +667,9 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
                   <div className="max-h-48 overflow-y-auto">
                     {boardMembers
                       .filter((member) => {
+                        // Exclude AI user
+                        if (member.email === "ai@assistant.com") return false;
+                        
                         const isAssigned = formData.assignees.includes(
                           member._id || member
                         );
@@ -573,15 +745,59 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
           </div>
         </div>
 
-        {/* Completed Toggle */}
+        {/* Status Selection */}
+        <div>
+          <Label>Status</Label>
+          <Select
+            value={formData.status}
+            onChange={(e) => {
+              const newStatus = e.target.value;
+              setFormData({ 
+                ...formData, 
+                status: newStatus,
+                completed: newStatus === "done",
+                pauseReason: newStatus !== "paused" ? "" : formData.pauseReason
+              });
+            }}
+            className="mt-2"
+          >
+            <option value="pending">Pending</option>
+            <option value="ongoing">Ongoing</option>
+            <option value="paused">Paused</option>
+            <option value="done">Done</option>
+          </Select>
+        </div>
+
+        {/* Pause Reason (only show when paused) */}
+        {formData.status === "paused" && (
+          <div>
+            <Label required>Pause Reason</Label>
+            <Textarea
+              placeholder="Enter reason for pausing this task..."
+              value={formData.pauseReason}
+              onChange={(e) =>
+                setFormData({ ...formData, pauseReason: e.target.value })
+              }
+              rows={3}
+              className="mt-2"
+            />
+          </div>
+        )}
+
+        {/* Completed Toggle (keep for backward compatibility) */}
         <div className="flex items-center gap-2">
           <input
             type="checkbox"
             id="completed"
             checked={formData.completed}
-            onChange={(e) =>
-              setFormData({ ...formData, completed: e.target.checked })
-            }
+            onChange={(e) => {
+              const isCompleted = e.target.checked;
+              setFormData({ 
+                ...formData, 
+                completed: isCompleted,
+                status: isCompleted ? "done" : formData.status === "done" ? "pending" : formData.status
+              });
+            }}
             className="h-4 w-4 rounded"
           />
           <Label htmlFor="completed" className="cursor-pointer">
@@ -689,7 +905,7 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
         </div>
 
         {/* Attachments */}
-        {task && (
+        {!isCreating && task && (
           <div>
             <Label>Attachments</Label>
             <div className="mt-2 space-y-3">
@@ -1017,18 +1233,20 @@ const TaskEditModal = ({ isOpen, onClose, task, boardId, lists, boardMembers = [
         </div>
 
         {/* Task Info */}
-        <div className="pt-4 border-t border-border">
-          <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
-            <div>
-              <span className="font-medium">Created:</span>{" "}
-              {formatDate(task.createdAt)}
-            </div>
-            <div>
-              <span className="font-medium">Last updated:</span>{" "}
-              {formatDate(task.updatedAt)}
+        {!isCreating && task && (
+          <div className="pt-4 border-t border-border">
+            <div className="grid grid-cols-2 gap-4 text-sm text-muted-foreground">
+              <div>
+                <span className="font-medium">Created:</span>{" "}
+                {formatDate(task.createdAt)}
+              </div>
+              <div>
+                <span className="font-medium">Last updated:</span>{" "}
+                {formatDate(task.updatedAt)}
+              </div>
             </div>
           </div>
-        </div>
+        )}
 
       </form>
     </Modal>

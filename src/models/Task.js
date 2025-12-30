@@ -49,6 +49,19 @@ const TaskSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    status: {
+      type: String,
+      enum: ["pending", "ongoing", "paused", "done"],
+      default: "pending",
+    },
+    pauseReason: {
+      type: String,
+      trim: true,
+    },
+    assignedBy: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+    },
     attachments: [
       {
         name: String,

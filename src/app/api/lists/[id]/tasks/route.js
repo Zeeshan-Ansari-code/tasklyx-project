@@ -8,6 +8,7 @@ import { triggerPusherEvent } from "@/lib/pusher";
 import { createActivity } from "@/lib/activity";
 import { triggerWebhooks } from "@/lib/webhooks";
 import { canCreateTasks, canAssignTaskTo } from "@/lib/permissions";
+import { notifyTaskAssigned, notifyTaskCreated } from "@/lib/notifications";
 
 // GET all tasks for a list
 export async function GET(request, { params }) {
@@ -47,7 +48,7 @@ export async function GET(request, { params }) {
 
     const tasks = await Task.find({ list: id })
       .populate("assignees", "name email avatar")
-      .sort({ position: 1 });
+      .sort({ position: 1, createdAt: -1 }); // Sort by position first, then by creation date (newest first)
 
     return NextResponse.json({ tasks }, { status: 200 });
   } catch (error) {
@@ -95,7 +96,7 @@ export async function POST(request, { params }) {
     }
     
     const body = await request.json();
-    const { title, description, boardId, priority, dueDate, userId } = body;
+    const { title, description, boardId, priority, dueDate, userId, assignees } = body;
 
     if (!title || !title.trim()) {
       return NextResponse.json(
@@ -163,6 +164,8 @@ export async function POST(request, { params }) {
       priority: priority || "medium",
       dueDate: dueDate || null,
       assignees: assignees || [],
+      status: "pending",
+      assignedBy: (assignees && assignees.length > 0 && userId) ? userId : undefined,
     });
 
     // Add task to list
@@ -171,6 +174,27 @@ export async function POST(request, { params }) {
     });
 
     await task.populate("assignees", "name email avatar");
+    await task.populate("board", "title owner members");
+
+    // Notify assigned users when task is created
+    if (assignees && Array.isArray(assignees) && assignees.length > 0 && userId) {
+      for (const assigneeId of assignees) {
+        try {
+          await notifyTaskAssigned(task, assigneeId, userId);
+        } catch (error) {
+          console.error(`[Task Create] Failed to notify assignee ${assigneeId}:`, error);
+        }
+      }
+    }
+
+    // Notify all board members about task creation
+    if (userId) {
+      try {
+        await notifyTaskCreated(task, userId, boardId);
+      } catch (error) {
+        console.error(`[Task Create] Failed to send creation notifications:`, error);
+      }
+    }
 
     // Trigger Pusher event
     await triggerPusherEvent(`board-${boardId}`, "task:created", {
@@ -186,6 +210,17 @@ export async function POST(request, { params }) {
         description: `created task "${title.trim()}"`,
         metadata: { taskId: task._id.toString() },
       });
+
+      // Log activity for assignment if assignees were added
+      if (assignees && Array.isArray(assignees) && assignees.length > 0) {
+        await createActivity({
+          boardId,
+          userId,
+          type: "task_assigned",
+          description: `assigned task "${title.trim()}"`,
+          metadata: { taskId: task._id.toString(), assignees },
+        });
+      }
     }
 
     // Trigger webhooks

@@ -354,3 +354,103 @@ select option {
 .dark .gradient-purple {
   background: linear-gradient(135deg, #c471ed 0%, #f64f59 100%);
 }
+
+/* Date input calendar icon positioning */
+input[type="date"] {
+  position: relative;
+  padding-right: 2.75rem !important; /* Ensure enough space for calendar icon */
+  text-align: left; /* Align date text to the left */
+  overflow: visible; /* Prevent text cutting */
+}
+
+/* WebKit browsers (Chrome, Safari, Edge) */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  margin: 0;
+  z-index: 1;
+}
+
+input[type="date"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Hide inner spin button and clear button */
+input[type="date"]::-webkit-inner-spin-button,
+input[type="date"]::-webkit-clear-button {
+  display: none;
+  -webkit-appearance: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* Firefox date input */
+input[type="date"]::-moz-calendar-picker-indicator {
+  position: absolute;
+  right: 0.5rem;
+  top: 50%;
+  transform: translateY(-50%);
+  cursor: pointer;
+  opacity: 0.7;
+  transition: opacity 0.2s;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  margin: 0;
+  z-index: 1;
+}
+
+input[type="date"]::-moz-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Ensure date input text doesn't overlap with icon - allow full width for date parts */
+input[type="date"]::-webkit-datetime-edit {
+  padding-right: 0.5rem; /* Small padding to prevent overlap with icon */
+  width: auto;
+  min-width: 0;
+}
+
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  padding-right: 0.5rem;
+  width: auto;
+  min-width: 0;
+}
+
+input[type="date"]::-webkit-datetime-edit-text {
+  padding: 0 0.25rem;
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  padding: 0 0.125rem;
+  min-width: auto;
+}
+
+/* Ensure date input text doesn't overlap with icon */
+input[type="date"]::-webkit-datetime-edit {
+  padding-right: 0;
+}
+
+input[type="date"]::-webkit-datetime-edit-fields-wrapper {
+  padding-right: 0;
+}
+
+input[type="date"]::-webkit-datetime-edit-text {
+  padding: 0;
+}
+
+input[type="date"]::-webkit-datetime-edit-month-field,
+input[type="date"]::-webkit-datetime-edit-day-field,
+input[type="date"]::-webkit-datetime-edit-year-field {
+  padding: 0;
+}

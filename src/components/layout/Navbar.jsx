@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, Bell, Search, Plus, LogOut, User as UserIcon } from "lucide-react";
+import { Menu, Bell, Search, Plus, LogOut, User as UserIcon, Bot } from "lucide-react";
 import Button from "../ui/Button";
 import Avatar from "../ui/Avatar";
 import Input from "../ui/Input";
@@ -133,6 +133,29 @@ const Navbar = ({ onMenuClick, user, sidebarOpen, sidebarCollapsed, sidebarWidth
         </Button>
 
         <div className="hidden md:flex items-center gap-3 ml-auto">
+          {/* AI Assistant Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hidden sm:flex hover:bg-primary/10 transition-colors"
+            onClick={() => router.push("/ai-chat")}
+            title="AI Assistant"
+          >
+            <Bot className="h-4 w-4 mr-2" />
+            <span className="text-primary font-medium">
+              AI
+            </span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="sm:hidden hover:bg-primary/10 hover:text-primary transition-colors"
+            onClick={() => router.push("/ai-chat")}
+            title="AI Assistant"
+          >
+            <Bot className="h-5 w-5" />
+          </Button>
+
           {/* Create Button */}
           <Button 
             size="sm" 
@@ -203,6 +226,16 @@ const Navbar = ({ onMenuClick, user, sidebarOpen, sidebarCollapsed, sidebarWidth
 
         {/* Mobile Right Section */}
         <div className="flex md:hidden items-center gap-2">
+          {/* AI Assistant Button (Mobile) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="hover:bg-primary/10 hover:text-primary transition-colors relative"
+            onClick={() => router.push("/ai-chat")}
+            title="AI Assistant"
+          >
+            <Bot className="h-5 w-5" />
+          </Button>
           <ThemeToggle />
           <NotificationsDropdown />
           <div className="relative" ref={mobileMenuRef}>

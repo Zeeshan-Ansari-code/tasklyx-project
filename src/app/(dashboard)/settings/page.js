@@ -12,6 +12,8 @@ import Modal from "@/components/ui/Modal";
 import { useAuth } from "@/context/AuthContext";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
+import { getRoleLabel, getRoleBadgeColor } from "@/lib/permissions";
+import Badge from "@/components/ui/Badge";
 
 export default function SettingsPage() {
   const { user, logout, login } = useAuth();
@@ -380,6 +382,27 @@ export default function SettingsPage() {
                     required
                     className="mt-2"
                   />
+                </div>
+
+                <div>
+                  <Label>Current Role</Label>
+                  <div className="mt-2">
+                    {user?.role ? (
+                      <Badge
+                        variant="outline"
+                        className={getRoleBadgeColor(user.role)}
+                      >
+                        {getRoleLabel(user.role)}
+                      </Badge>
+                    ) : (
+                      <span className="text-sm text-muted-foreground">
+                        Not assigned
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Your role determines what actions you can perform. Contact an admin to change your role.
+                  </p>
                 </div>
 
                 <div className="flex justify-end pt-4">

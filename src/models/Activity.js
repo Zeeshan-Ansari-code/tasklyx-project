@@ -27,6 +27,7 @@ const ActivitySchema = new mongoose.Schema(
         "task_moved",
         "task_assigned",
         "task_completed",
+        "task_reopened",
         "comment_added",
         "member_added",
         "member_removed",

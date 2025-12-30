@@ -182,6 +182,62 @@ export default function BoardsPage() {
     }
   };
 
+  const handleExportBoard = async (board) => {
+    if (!board?._id) return;
+
+    try {
+      const res = await fetch(`/api/boards/${board._id}/export`);
+      const data = await res.json();
+
+      if (res.ok) {
+        // Create a blob and download
+        const blob = new Blob([JSON.stringify(data, null, 2)], {
+          type: "application/json",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `${board.title.replace(/[^a-z0-9]/gi, "_")}_export.json`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+        toast.success("Board exported successfully");
+      } else {
+        toast.error(data.message || "Failed to export board");
+      }
+    } catch (error) {
+      console.error("Export error:", error);
+      toast.error("Failed to export board");
+    }
+  };
+
+  const handleArchiveBoard = async (boardId, archived) => {
+    if (!user?.id || !boardId) return;
+
+    try {
+      const res = await fetch(`/api/boards/${boardId}/archive`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ userId: user.id, archived }),
+      });
+
+      const data = await res.json();
+
+      if (res.ok) {
+        toast.success(
+          archived ? "Board archived successfully" : "Board unarchived successfully"
+        );
+        fetchBoards();
+      } else {
+        toast.error(data.message || "Failed to archive board");
+      }
+    } catch (error) {
+      console.error("Archive error:", error);
+      toast.error("Failed to archive board");
+    }
+  };
+
   const filteredBoards = boards.filter((board) =>
     board.title.toLowerCase().includes(searchQuery.toLowerCase())
   );

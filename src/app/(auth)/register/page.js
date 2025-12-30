@@ -72,7 +72,7 @@ export default function RegisterPage() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
+      <Card className="w-full max-w-4xl">
         <CardHeader className="space-y-1 text-center">
           <div className="flex justify-center mb-4">
             <div className="h-12 w-12 rounded-lg bg-primary flex items-center justify-center">
@@ -86,155 +86,157 @@ export default function RegisterPage() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="name" required>
-                Full Name
-              </Label>
-              <div className="relative">
-                <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name" required>
+                  Full Name
+                </Label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="name"
+                    type="text"
+                    placeholder="John Doe"
+                    className="pl-10"
+                    value={formData.name}
+                    onChange={(e) =>
+                      setFormData({ ...formData, name: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email" required>
+                  Email
+                </Label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="name@example.com"
+                    className="pl-10"
+                    value={formData.email}
+                    onChange={(e) =>
+                      setFormData({ ...formData, email: e.target.value })
+                    }
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="role" required>
+                  Role
+                </Label>
+                <div className="relative">
+                  <Shield className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Select
+                    id="role"
+                    value={formData.role}
+                    onChange={(e) =>
+                      setFormData({ ...formData, role: e.target.value })
+                    }
+                    className="pl-10"
+                    required
+                  >
+                    <option value="team_member">Team Member</option>
+                    <option value="manager">Manager</option>
+                    <option value="viewer">Viewer</option>
+                    <option value="admin">Admin</option>
+                  </Select>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  Note: Admin can change your role later if needed
+                </p>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="recoveryAnswer" required>
+                  Security answer (e.g. your school name or child name)
+                </Label>
                 <Input
-                  id="name"
+                  id="recoveryAnswer"
                   type="text"
-                  placeholder="John Doe"
-                  className="pl-10"
-                  value={formData.name}
+                  placeholder="This will be used if you forget your password"
+                  value={formData.recoveryAnswer}
                   onChange={(e) =>
-                    setFormData({ ...formData, name: e.target.value })
+                    setFormData({
+                      ...formData,
+                      recoveryAnswer: e.target.value,
+                    })
                   }
                   required
                 />
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="email" required>
-                Email
-              </Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="name@example.com"
-                  className="pl-10"
-                  value={formData.email}
-                  onChange={(e) =>
-                    setFormData({ ...formData, email: e.target.value })
-                  }
-                  required
-                />
+              <div className="space-y-2">
+                <Label htmlFor="password" required>
+                  Password
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    className="pl-10 pr-10"
+                    value={formData.password}
+                    onChange={(e) =>
+                      setFormData({ ...formData, password: e.target.value })
+                    }
+                    required
+                    minLength={6}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
-            </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="role" required>
-                Role
-              </Label>
-              <div className="relative">
-                <Shield className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Select
-                  id="role"
-                  value={formData.role}
-                  onChange={(e) =>
-                    setFormData({ ...formData, role: e.target.value })
-                  }
-                  className="pl-10"
-                  required
-                >
-                  <option value="team_member">Team Member</option>
-                  <option value="manager">Manager</option>
-                  <option value="viewer">Viewer</option>
-                  <option value="admin">Admin</option>
-                </Select>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Note: Admin can change your role later if needed
-              </p>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="recoveryAnswer" required>
-                Security answer (e.g. your school name or child name)
-              </Label>
-              <Input
-                id="recoveryAnswer"
-                type="text"
-                placeholder="This will be used if you forget your password"
-                value={formData.recoveryAnswer}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    recoveryAnswer: e.target.value,
-                  })
-                }
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="password" required>
-                Password
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="pl-10 pr-10"
-                  value={formData.password}
-                  onChange={(e) =>
-                    setFormData({ ...formData, password: e.target.value })
-                  }
-                  required
-                  minLength={6}
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword" required>
-                Confirm Password
-              </Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder="••••••••"
-                  className="pl-10 pr-10"
-                  value={formData.confirmPassword}
-                  onChange={(e) =>
-                    setFormData({ ...formData, confirmPassword: e.target.value })
-                  }
-                  required
-                />
-                <button
-                  type="button"
-                  onClick={() => setShowConfirmPassword((prev) => !prev)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
-                  aria-label={
-                    showConfirmPassword ? "Hide password" : "Show password"
-                  }
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-4 w-4" />
-                  ) : (
-                    <Eye className="h-4 w-4" />
-                  )}
-                </button>
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword" required>
+                  Confirm Password
+                </Label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    className="pl-10 pr-10"
+                    value={formData.confirmPassword}
+                    onChange={(e) =>
+                      setFormData({ ...formData, confirmPassword: e.target.value })
+                    }
+                    required
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowConfirmPassword((prev) => !prev)}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                    aria-label={
+                      showConfirmPassword ? "Hide password" : "Show password"
+                    }
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-4 w-4" />
+                    ) : (
+                      <Eye className="h-4 w-4" />
+                    )}
+                  </button>
+                </div>
               </div>
             </div>
 

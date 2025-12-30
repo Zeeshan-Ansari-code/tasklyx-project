@@ -86,6 +86,18 @@ export async function POST(request, { params }) {
     // Get the newly added comment (last one)
     const newComment = task.comments[task.comments.length - 1];
 
+    // Populate board for activity logging
+    await task.populate("board", "title");
+
+    // Log activity
+    await createActivity({
+      boardId: task.board.toString(),
+      userId,
+      type: "comment_added",
+      description: `commented on task "${task.title}"`,
+      metadata: { taskId: id, commentId: newComment._id?.toString() },
+    });
+
     // Notify assignees about the comment
     await notifyTaskComment(task, userId, task.board.toString());
 

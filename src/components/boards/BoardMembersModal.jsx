@@ -26,8 +26,8 @@ const BoardMembersModal = ({ isOpen, onClose, board, onUpdate }) => {
     const ownerId = board.owner?._id?.toString() || board.owner?.toString();
     const members = [];
     
-    // Add owner
-    if (board.owner) {
+    // Add owner (exclude AI user)
+    if (board.owner && board.owner.email !== "ai@assistant.com") {
       members.push({
         _id: board.owner._id || board.owner,
         name: board.owner.name || "Unknown",
@@ -37,10 +37,10 @@ const BoardMembersModal = ({ isOpen, onClose, board, onUpdate }) => {
       });
     }
     
-    // Add other members (excluding owner if they're also in members)
+    // Add other members (excluding owner if they're also in members, and exclude AI user)
     if (board.members && Array.isArray(board.members)) {
       board.members.forEach((member) => {
-        if (member.user) {
+        if (member.user && member.user.email !== "ai@assistant.com") {
           const userId = (member.user._id || member.user).toString();
           // Avoid duplicates (owner might also be in members)
           if (userId !== ownerId && !members.find((m) => {

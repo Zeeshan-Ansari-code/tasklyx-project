@@ -103,7 +103,12 @@ const Select = ({
       {/* Custom select button */}
       <button
         type="button"
-        onClick={() => !disabled && setIsOpen(!isOpen)}
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!disabled) {
+            setIsOpen(!isOpen);
+          }
+        }}
         disabled={disabled}
         className={cn(
           "flex h-9 w-full items-center justify-between rounded-lg border border-border/50 bg-background px-3 py-1.5 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary/50 transition-all duration-200 disabled:cursor-not-allowed disabled:opacity-50",

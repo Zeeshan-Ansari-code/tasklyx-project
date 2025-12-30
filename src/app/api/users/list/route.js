@@ -33,8 +33,8 @@ export async function GET(request) {
       );
     }
 
-    // Get all users
-    const users = await User.find({})
+    // Get all users (exclude AI user)
+    const users = await User.find({ email: { $ne: "ai@assistant.com" } })
       .select("-password -recoveryAnswer")
       .sort({ createdAt: -1 });
 

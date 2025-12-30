@@ -16,6 +16,7 @@ import {
   BarChart3,
   UserCog,
   Shield,
+  Bot,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Button from "../ui/Button";
@@ -76,6 +77,11 @@ const Sidebar = ({ isOpen, onClose, collapsed: externalCollapsed, onCollapseChan
       title: "Dashboard",
       icon: LayoutDashboard,
       href: "/dashboard",
+    },
+    {
+      title: "AI Assistant",
+      icon: Bot,
+      href: "/ai-chat",
     },
     {
       title: "Boards",
@@ -196,8 +202,8 @@ const Sidebar = ({ isOpen, onClose, collapsed: externalCollapsed, onCollapseChan
                         "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
                         "group relative",
                         isActive
-                          ? "bg-primary text-primary-foreground shadow-md shadow-primary/20"
-                          : "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
+                          ? item.className || "bg-primary text-primary-foreground shadow-md shadow-primary/20"
+                          : item.className || "text-muted-foreground hover:bg-accent/50 hover:text-foreground",
                         collapsed && "justify-center"
                       )}
                       title={collapsed ? item.title : undefined}
@@ -214,7 +220,7 @@ const Sidebar = ({ isOpen, onClose, collapsed: externalCollapsed, onCollapseChan
                           {item.title}
                         </span>
                       )}
-                      {isActive && !collapsed && (
+                      {isActive && !collapsed && !item.className && (
                         <div className="absolute left-0 top-1/2 -translate-y-1/2 h-6 w-1 bg-primary-foreground rounded-r-full" />
                       )}
                     </div>

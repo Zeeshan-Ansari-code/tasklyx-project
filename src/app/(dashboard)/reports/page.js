@@ -129,10 +129,10 @@ export default function ReportsPage() {
       </div>
 
       {/* Filters */}
-      <Card className="border-border/50 shadow-sm">
+      <Card className="border-border/50 shadow-sm relative z-10">
         <CardContent className="p-5">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div>
+            <div className="relative z-10">
               <Label className="font-semibold">Board</Label>
               <Select
                 value={selectedBoard}
@@ -189,9 +189,9 @@ export default function ReportsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{overview.overview.totalTasks}</div>
+              <div className="text-3xl font-bold">{overview?.overview?.totalTasks || 0}</div>
               <p className="text-xs text-muted-foreground mt-2">
-                {overview.overview.activeTasks} active, {overview.overview.completedTasks} completed
+                {overview?.overview?.activeTasks || 0} active, {overview?.overview?.completedTasks || 0} completed
               </p>
             </CardContent>
           </Card>
@@ -204,7 +204,7 @@ export default function ReportsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{overview.overview.completionRate}%</div>
+              <div className="text-3xl font-bold">{overview?.overview?.completionRate || 0}%</div>
               <p className="text-xs text-muted-foreground mt-2">
                 Tasks completed
               </p>
@@ -220,10 +220,10 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold">
-                {overview.timeTracking.totalHoursLogged}h
+                {overview?.timeTracking?.totalHoursLogged || 0}h
               </div>
               <p className="text-xs text-muted-foreground mt-2">
-                {overview.timeTracking.totalEntries} entries
+                {overview?.timeTracking?.totalEntries || 0} entries
               </p>
             </CardContent>
           </Card>
@@ -236,9 +236,9 @@ export default function ReportsPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{overview.overview.overdueTasks}</div>
+              <div className="text-3xl font-bold">{overview?.overview?.overdueTasks || 0}</div>
               <p className="text-xs text-muted-foreground mt-2">
-                {overview.overview.tasksDueThisWeek} due this week
+                {overview?.overview?.tasksDueThisWeek || 0} due this week
               </p>
             </CardContent>
           </Card>
@@ -256,7 +256,7 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {Object.entries(overview.tasksByPriority || {}).map(([priority, count]) => (
+                {Object.entries(overview?.tasksByPriority || {}).map(([priority, count]) => (
                   <div key={priority} className="flex items-center justify-between">
                     <span className="capitalize font-medium">{priority}</span>
                     <div className="flex items-center gap-2">
@@ -265,12 +265,12 @@ export default function ReportsPage() {
                           className="bg-primary h-2 rounded-full"
                           style={{
                             width: `${
-                              (count / overview.overview.totalTasks) * 100
+                              ((count || 0) / (overview?.overview?.totalTasks || 1)) * 100
                             }%`,
                           }}
                         />
                       </div>
-                      <span className="text-sm font-semibold w-8 text-right">{count}</span>
+                      <span className="text-sm font-semibold w-8 text-right">{count || 0}</span>
                     </div>
                   </div>
                 ))}
@@ -285,23 +285,23 @@ export default function ReportsPage() {
             <CardHeader>
               <CardTitle>Team Velocity</CardTitle>
               <CardDescription className="mt-1">
-                Average: {velocity.averageVelocity} tasks/week
+                Average: {velocity?.averageVelocity || 0} tasks/week
               </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {velocity.weeklyData.map((week) => (
-                  <div key={week.week} className="space-y-2">
+                {(velocity?.weeklyData || []).map((week) => (
+                  <div key={week?.week} className="space-y-2">
                     <div className="flex items-center justify-between text-sm">
-                      <span>Week {week.week}</span>
-                      <span className="font-semibold">{week.tasksCompleted} tasks</span>
+                      <span>Week {week?.week}</span>
+                      <span className="font-semibold">{week?.tasksCompleted || 0} tasks</span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-3">
                       <div
                         className="bg-primary h-3 rounded-full"
                         style={{
                           width: `${
-                            (week.tasksCompleted / Math.max(...velocity.weeklyData.map(w => w.tasksCompleted), 1)) * 100
+                            ((week?.tasksCompleted || 0) / Math.max(...(velocity?.weeklyData || []).map(w => w?.tasksCompleted || 0), 1)) * 100
                           }%`,
                         }}
                       />
@@ -314,7 +314,7 @@ export default function ReportsPage() {
         )}
 
         {/* Time by User */}
-        {overview && overview.timeTracking.timeByUser.length > 0 && (
+        {overview && (overview?.timeTracking?.timeByUser?.length || 0) > 0 && (
           <Card className="border-border/50 shadow-sm">
             <CardHeader>
               <CardTitle>Time by User</CardTitle>
@@ -322,14 +322,14 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {overview.timeTracking.timeByUser.map((user) => (
-                  <div key={user.userId} className="flex items-center justify-between">
+                {(overview?.timeTracking?.timeByUser || []).map((user) => (
+                  <div key={user?.userId} className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">{user.userName}</p>
-                      <p className="text-xs text-muted-foreground">{user.entries} entries</p>
+                      <p className="font-medium">{user?.userName || "Unknown"}</p>
+                      <p className="text-xs text-muted-foreground">{user?.entries || 0} entries</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-semibold">{user.totalHours.toFixed(1)}h</p>
+                      <p className="font-semibold">{(user?.totalHours || 0).toFixed(1)}h</p>
                     </div>
                   </div>
                 ))}
@@ -339,7 +339,7 @@ export default function ReportsPage() {
         )}
 
         {/* Workload Distribution */}
-        {overview && overview.workload.tasksByAssignee.length > 0 && (
+        {overview && (overview?.workload?.tasksByAssignee?.length || 0) > 0 && (
           <Card className="border-border/50 shadow-sm">
             <CardHeader>
               <CardTitle>Workload Distribution</CardTitle>
@@ -347,12 +347,12 @@ export default function ReportsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {overview.workload.tasksByAssignee.map((assignee) => (
-                  <div key={assignee.userId} className="space-y-1">
+                {(overview?.workload?.tasksByAssignee || []).map((assignee) => (
+                  <div key={assignee?.userId} className="space-y-1">
                     <div className="flex items-center justify-between">
-                      <span className="font-medium">{assignee.userName}</span>
+                      <span className="font-medium">{assignee?.userName || "Unknown"}</span>
                       <span className="text-sm">
-                        {assignee.completedCount}/{assignee.taskCount} completed
+                        {assignee?.completedCount || 0}/{assignee?.taskCount || 0} completed
                       </span>
                     </div>
                     <div className="w-full bg-muted rounded-full h-2">
@@ -360,8 +360,8 @@ export default function ReportsPage() {
                         className="bg-green-500 h-2 rounded-full"
                         style={{
                           width: `${
-                            assignee.taskCount > 0
-                              ? (assignee.completedCount / assignee.taskCount) * 100
+                            (assignee?.taskCount || 0) > 0
+                              ? ((assignee?.completedCount || 0) / (assignee?.taskCount || 1)) * 100
                               : 0
                           }%`,
                         }}

@@ -6,7 +6,14 @@ import Board from "@/models/Board";
 import User from "@/models/User";
 import mongoose from "mongoose";
 import { triggerPusherEvent } from "@/lib/pusher";
-import { notifyTaskAssigned } from "@/lib/notifications";
+import { 
+  notifyTaskAssigned, 
+  notifyTaskCompleted, 
+  notifyTaskReopened,
+  notifyTaskUpdated,
+  notifyTaskDeleted,
+  notifyTaskPaused
+} from "@/lib/notifications";
 import { createActivity } from "@/lib/activity";
 import { triggerWebhooks } from "@/lib/webhooks";
 import { canAssignTaskTo, canEditTasks, canDeleteTasks } from "@/lib/permissions";
@@ -120,6 +127,8 @@ export async function PUT(request, { params }) {
       labels,
       customFields,
       userId,
+      status,
+      pauseReason,
     } = body;
 
     console.log(`[Task Update] PUT /api/tasks/${id}`);
@@ -145,12 +154,32 @@ export async function PUT(request, { params }) {
     if (description !== undefined) updateData.description = description;
     if (list !== undefined) updateData.list = list;
     if (position !== undefined) updateData.position = position;
-    if (assignees !== undefined) updateData.assignees = assignees;
+    if (assignees !== undefined) {
+      updateData.assignees = assignees;
+      // Update assignedBy when assignees change
+      if (userId && assignees && assignees.length > 0) {
+        updateData.assignedBy = userId;
+      }
+    }
     if (priority !== undefined) updateData.priority = priority;
     if (dueDate !== undefined) updateData.dueDate = dueDate;
-    if (completed !== undefined) updateData.completed = completed;
+    if (completed !== undefined) {
+      updateData.completed = completed;
+      // Update status based on completed
+      updateData.status = completed ? "done" : "pending";
+    }
     if (labels !== undefined) updateData.labels = labels;
     if (customFields !== undefined) updateData.customFields = customFields;
+    
+    // Handle status field separately (can be ongoing, paused, etc.)
+    if (status !== undefined) {
+      updateData.status = status;
+      if (status === "paused" && pauseReason !== undefined) {
+        updateData.pauseReason = pauseReason;
+      } else if (status !== "paused") {
+        updateData.pauseReason = undefined;
+      }
+    }
 
     const task = await Task.findByIdAndUpdate(
       id,
@@ -158,7 +187,7 @@ export async function PUT(request, { params }) {
       { new: true, runValidators: true }
     )
       .populate("assignees", "name email avatar")
-      .populate("board", "title owner")
+      .populate("board", "title owner members")
       .populate({
         path: "comments.user",
         select: "name email avatar",
@@ -295,17 +324,102 @@ export async function PUT(request, { params }) {
       }
     }
 
-    // Log activity for task completion
+    // Handle task completion/reopening notifications
     if (completed !== undefined && completed !== oldTask.completed && userId) {
-      await createActivity({
-        boardId: task.board.toString(),
-        userId,
-        type: completed ? "task_completed" : "task_updated",
-        description: completed
-          ? `completed task "${task.title}"`
-          : `reopened task "${task.title}"`,
-        metadata: { taskId: id },
-      });
+      // Ensure task has board populated
+      if (!task.board || typeof task.board === 'string') {
+        await task.populate('board', 'title owner members');
+      }
+
+      const boardId = task.board?._id?.toString() || task.board?.toString() || task.board;
+
+      if (!boardId) {
+        console.error(`[Task Update] No board ID found for task ${id}`);
+      } else {
+        // Log activity
+        try {
+          await createActivity({
+            boardId,
+            userId,
+            type: completed ? "task_completed" : "task_reopened",
+            description: completed
+              ? `completed task "${task.title}"`
+              : `reopened task "${task.title}"`,
+            metadata: { taskId: id },
+          });
+          console.log(`[Task Update] Activity logged: ${completed ? 'completed' : 'reopened'} task ${id}`);
+        } catch (error) {
+          console.error(`[Task Update] Failed to log activity:`, error);
+        }
+
+        // Notify all board members
+        try {
+          if (completed) {
+            console.log(`[Task Update] Sending completion notifications for task ${id}`);
+            await notifyTaskCompleted(task, userId, boardId);
+          } else {
+            console.log(`[Task Update] Sending reopening notifications for task ${id}`);
+            await notifyTaskReopened(task, userId, boardId);
+          }
+        } catch (error) {
+          console.error(`[Task Update] Failed to send completion/reopening notifications:`, error);
+        }
+      }
+    }
+
+    // Handle status changes (paused, ongoing, etc.)
+    if (status !== undefined && status !== oldTask.status && userId) {
+      // Ensure task has board populated
+      if (!task.board || typeof task.board === 'string') {
+        await task.populate('board', 'title owner members');
+      }
+
+      const boardId = task.board?.toString() || task.board;
+
+      if (status === "paused") {
+        // Log activity for paused
+        try {
+          await createActivity({
+            boardId,
+            userId,
+            type: "task_updated",
+            description: `paused task "${task.title}"${pauseReason ? `: ${pauseReason}` : ''}`,
+            metadata: { taskId: id, status: "paused", pauseReason },
+          });
+        } catch (error) {
+          console.error(`[Task Update] Failed to log paused activity:`, error);
+        }
+
+        // Notify admin/assigner about pause
+        try {
+          await notifyTaskPaused(task, userId, boardId, pauseReason);
+        } catch (error) {
+          console.error(`[Task Update] Failed to send pause notifications:`, error);
+        }
+      }
+    }
+
+    // Notify about other task updates (if task was updated but not completed/reopened/status change)
+    const hasOtherUpdates = 
+      (title !== undefined && title !== oldTask.title) ||
+      (description !== undefined && description !== oldTask.description) ||
+      (priority !== undefined && priority !== oldTask.priority) ||
+      (dueDate !== undefined && dueDate !== oldTask.dueDate) ||
+      (list !== undefined && list !== oldTask.list?.toString());
+
+    if (hasOtherUpdates && userId && completed === undefined && status === undefined) {
+      // Ensure task has board populated
+      if (!task.board || typeof task.board === 'string') {
+        await task.populate('board', 'title owner members');
+      }
+
+      const boardId = task.board?.toString() || task.board;
+
+      try {
+        await notifyTaskUpdated(task, userId, boardId);
+      } catch (error) {
+        console.error(`[Task Update] Failed to send update notifications:`, error);
+      }
     }
 
     // Trigger Pusher event
@@ -384,7 +498,7 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    const task = await Task.findById(id);
+    const task = await Task.findById(id).populate("board", "title owner members");
     if (!task) {
       return NextResponse.json(
         { message: "Task not found" },
@@ -392,7 +506,18 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    const boardId = task.board.toString();
+    const boardId = task.board?.toString() || task.board;
+    const taskTitle = task.title;
+
+    // Get userId from request body or headers if available
+    let userId = null;
+    try {
+      const body = await request.json().catch(() => ({}));
+      userId = body.userId || null;
+    } catch {
+      // If no body, try to get from headers or use null
+      userId = null;
+    }
 
     // Remove task from list
     await List.findByIdAndUpdate(task.list, {
@@ -401,6 +526,15 @@ export async function DELETE(request, { params }) {
 
     // Delete the task
     await Task.findByIdAndDelete(id);
+
+    // Notify all board members about task deletion
+    if (userId) {
+      try {
+        await notifyTaskDeleted(taskTitle, userId, boardId);
+      } catch (error) {
+        console.error(`[Task Delete] Failed to send deletion notifications:`, error);
+      }
+    }
 
     // Trigger Pusher event
     await triggerPusherEvent(`board-${boardId}`, "task:deleted", {

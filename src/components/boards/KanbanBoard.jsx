@@ -26,7 +26,7 @@ import { pusherClient } from "@/lib/pusher";
 import { toast } from "sonner";
 import Button from "../ui/Button";
 import Input from "../ui/Input";
-import { Plus, Copy } from "lucide-react";
+import { Plus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = null }) => {
@@ -37,6 +37,7 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
   const [isAddingList, setIsAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState("");
   const [editingTask, setEditingTask] = useState(null);
+  const [creatingTask, setCreatingTask] = useState(null); // { listId, list }
   const [editingList, setEditingList] = useState(null);
   const [filters, setFilters] = useState({
     priority: null,
@@ -183,8 +184,8 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
     if (!over) return;
 
     if (active.data.current?.type === "list") {
-      const oldIndex = lists.findIndex((list) => list._id === active.id);
-      const newIndex = lists.findIndex((list) => list._id === over.id);
+      const oldIndex = lists.findIndex((list) => list?._id === active?.id);
+      const newIndex = lists.findIndex((list) => list?._id === over?.id);
 
       if (oldIndex !== newIndex) {
         const newLists = arrayMove(lists, oldIndex, newIndex);
@@ -198,20 +199,20 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
       const sourceListId = active.data.current.listId;
       const targetListId = over.data.current?.listId || over.id;
 
-      const targetList = lists.find((l) => l._id === targetListId);
-      const targetTask = targetList?.tasks?.find((t) => t._id === over.id);
+      const targetList = lists.find((l) => l?._id === targetListId);
+      const targetTask = targetList?.tasks?.find((t) => t?._id === over?.id);
 
       if (sourceListId === targetListId) {
-        const sourceList = lists.find((l) => l._id === sourceListId);
-        const oldIndex = sourceList.tasks.findIndex((t) => t._id === taskId);
+        const sourceList = lists.find((l) => l?._id === sourceListId);
+        const oldIndex = sourceList?.tasks?.findIndex((t) => t?._id === taskId) ?? -1;
         const newIndex = targetTask
-          ? sourceList.tasks.findIndex((t) => t._id === targetTask._id)
-          : sourceList.tasks.length;
+          ? sourceList?.tasks?.findIndex((t) => t?._id === targetTask?._id) ?? sourceList?.tasks?.length ?? 0
+          : sourceList?.tasks?.length ?? 0;
 
-        if (oldIndex !== newIndex) {
+        if (oldIndex !== newIndex && oldIndex >= 0 && sourceList?.tasks) {
           const newTasks = arrayMove(sourceList.tasks, oldIndex, newIndex);
           const updatedLists = lists.map((list) =>
-            list._id === sourceListId
+            list?._id === sourceListId
               ? { ...list, tasks: newTasks }
               : list
           );
@@ -256,10 +257,10 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
 
   const moveTask = async (taskId, sourceListId, targetListId, targetTaskId) => {
     try {
-      const targetList = lists.find((l) => l._id === targetListId);
+      const targetList = lists.find((l) => l?._id === targetListId);
       const newPosition = targetTaskId
-        ? targetList.tasks.findIndex((t) => t._id === targetTaskId)
-        : targetList.tasks.length;
+        ? targetList?.tasks?.findIndex((t) => t?._id === targetTaskId) ?? targetList?.tasks?.length ?? 0
+        : targetList?.tasks?.length ?? 0;
 
       const res = await fetch(`/api/tasks/${taskId}`, {
         method: "PUT",
@@ -308,14 +309,27 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
     }
   };
 
-  const handleAddTask = async (listId, title) => {
+  const handleAddTaskClick = (listId) => {
+    const list = lists.find((l) => l._id === listId);
+    if (list) {
+      setCreatingTask({ listId, list });
+    }
+  };
+
+  const handleCreateTask = async (taskData) => {
+    if (!user?.id) {
+      toast.error("You must be logged in to create tasks");
+      return;
+    }
+
     try {
-      const res = await fetch(`/api/lists/${listId}/tasks`, {
+      const res = await fetch(`/api/lists/${creatingTask.listId}/tasks`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          title,
+          ...taskData,
           boardId,
+          userId: user?.id,
         }),
       });
 
@@ -323,6 +337,7 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
 
       if (res.ok) {
         toast.success("Task created");
+        setCreatingTask(null);
         fetchLists();
       } else {
         toast.error(data.message || "Failed to create task");
@@ -340,10 +355,10 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
     if (!user?.id) return;
 
     try {
-      const res = await fetch(`/api/tasks/${task._id}/duplicate`, {
+      const res = await fetch(`/api/tasks/${task?._id}/duplicate`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: user.id }),
+        body: JSON.stringify({ userId: user?.id }),
       });
 
       const data = await res.json();
@@ -375,11 +390,13 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
     setConfirmDialog({
       isOpen: true,
       title: "Delete Task",
-      message: `Are you sure you want to delete "${task.title}"? This action cannot be undone.`,
+      message: `Are you sure you want to delete "${task?.title || "this task"}"? This action cannot be undone.`,
       onConfirm: async () => {
         try {
-          const res = await fetch(`/api/tasks/${task._id}`, {
+          const res = await fetch(`/api/tasks/${task?._id}`, {
             method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId: user?.id }),
           });
 
           if (res.ok) {
@@ -399,11 +416,11 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
     setConfirmDialog({
       isOpen: true,
       title: "Delete List",
-      message: `Are you sure you want to delete "${list.title}"? This will also delete all tasks in this list. This action cannot be undone.`,
+      message: `Are you sure you want to delete "${list?.title || "this list"}"? This will also delete all tasks in this list. This action cannot be undone.`,
       variant: "destructive",
       onConfirm: async () => {
         try {
-          const res = await fetch(`/api/lists/${list._id}`, {
+          const res = await fetch(`/api/lists/${list?._id}`, {
             method: "DELETE",
           });
 
@@ -425,14 +442,14 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
 
     return tasks.filter((task) => {
       // Filter by priority
-      if (filters.priority && task.priority !== filters.priority) {
+      if (filters?.priority && task?.priority !== filters.priority) {
         return false;
       }
 
       // Filter by assignee
-      if (filters.assignee) {
-        const assigneeIds = (task.assignees || []).map((a) =>
-          a._id ? a._id.toString() : a.toString()
+      if (filters?.assignee) {
+        const assigneeIds = (task?.assignees || []).map((a) =>
+          a?._id ? a._id.toString() : a?.toString()
         );
         if (!assigneeIds.includes(filters.assignee)) {
           return false;
@@ -440,7 +457,7 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
       }
 
       // Filter by due date
-      if (filters.dueDate && task.dueDate) {
+      if (filters?.dueDate && task?.dueDate) {
         const dueDate = new Date(task.dueDate);
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -463,14 +480,14 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
             if (dueDate <= weekFromNow) return false;
             break;
         }
-      } else if (filters.dueDate && !task.dueDate) {
+      } else if (filters?.dueDate && !task?.dueDate) {
         // If filtering by due date but task has no due date, exclude it
         return false;
       }
 
       // Filter by completed status
-      if (filters.completed !== null) {
-        if (task.completed !== filters.completed) {
+      if (filters?.completed !== null && filters?.completed !== undefined) {
+        if (task?.completed !== filters.completed) {
           return false;
         }
       }
@@ -503,17 +520,16 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
             strategy={horizontalListSortingStrategy}
           >
             {lists.map((list) => {
-              const listTasks = list.tasks || [];
+              const listTasks = list?.tasks || [];
               const filteredListTasks = filterTasks(listTasks);
               return (
                 <ListColumn
-                  key={list._id}
+                  key={list?._id}
                   list={list}
                   tasks={filteredListTasks}
-                  onAddTask={handleAddTask}
+                  onAddTask={handleAddTaskClick}
                   onEditTask={handleEditTask}
                   onDeleteTask={handleDeleteTask}
-                  onDuplicateTask={handleDuplicateTask}
                   onEditList={handleEditList}
                   onDeleteList={handleDeleteList}
                   boardId={boardId}
@@ -578,6 +594,21 @@ const KanbanBoard = ({ boardId, initialLists = [], boardMembers = [], board = nu
           ) : null}
         </DragOverlay>
       </DndContext>
+
+      {/* Task Create Modal */}
+      {creatingTask && (
+        <TaskEditModal
+          isOpen={!!creatingTask}
+          onClose={() => setCreatingTask(null)}
+          task={null}
+          boardId={boardId}
+          lists={lists}
+          boardMembers={boardMembers}
+          onUpdate={handleCreateTask}
+          isCreating={true}
+          defaultListId={creatingTask.listId}
+        />
+      )}
 
       {/* Task Edit Modal */}
       <TaskEditModal

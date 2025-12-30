@@ -95,10 +95,19 @@ export default function CalendarPage() {
 
   const getTasksForDate = (date) => {
     if (!date) return [];
-    const dateStr = date.toISOString().split("T")[0];
+    // Use local date comparison to avoid timezone issues
+    const year = date.getFullYear();
+    const month = date.getMonth();
+    const day = date.getDate();
+    
     return tasks.filter((task) => {
-      const taskDate = new Date(task.dueDate).toISOString().split("T")[0];
-      return taskDate === dateStr;
+      if (!task.dueDate) return false;
+      const taskDate = new Date(task.dueDate);
+      return (
+        taskDate.getFullYear() === year &&
+        taskDate.getMonth() === month &&
+        taskDate.getDate() === day
+      );
     });
   };
 

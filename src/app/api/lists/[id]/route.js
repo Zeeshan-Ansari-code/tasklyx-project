@@ -5,6 +5,7 @@ import Board from "@/models/Board";
 import Task from "@/models/Task";
 import mongoose from "mongoose";
 import { triggerPusherEvent } from "@/lib/pusher";
+import { createActivity } from "@/lib/activity";
 
 // PUT update list
 export async function PUT(request, { params }) {
@@ -43,7 +44,15 @@ export async function PUT(request, { params }) {
     }
     
     const body = await request.json();
-    const { title, position } = body;
+    const { title, position, userId } = body;
+
+    const oldList = await List.findById(id);
+    if (!oldList) {
+      return NextResponse.json(
+        { message: "List not found" },
+        { status: 404 }
+      );
+    }
 
     const updateData = {};
     if (title !== undefined) updateData.title = title.trim();
@@ -66,6 +75,17 @@ export async function PUT(request, { params }) {
         { message: "List not found" },
         { status: 404 }
       );
+    }
+
+    // Log activity if title changed (not just position)
+    if (userId && title !== undefined && title.trim() !== oldList.title) {
+      await createActivity({
+        boardId: list.board.toString(),
+        userId,
+        type: "list_updated",
+        description: `renamed list to "${title.trim()}"`,
+        metadata: { listId: id },
+      });
     }
 
     // Trigger Pusher event
@@ -133,6 +153,10 @@ export async function DELETE(request, { params }) {
     }
 
     const boardId = list.board.toString();
+    const listTitle = list.title;
+
+    const body = await request.json().catch(() => ({}));
+    const { userId } = body;
 
     // Delete all tasks in the list
     await Task.deleteMany({ list: id });
@@ -144,6 +168,17 @@ export async function DELETE(request, { params }) {
 
     // Delete the list
     await List.findByIdAndDelete(id);
+
+    // Log activity
+    if (userId) {
+      await createActivity({
+        boardId,
+        userId,
+        type: "list_deleted",
+        description: `deleted list "${listTitle}"`,
+        metadata: { listId: id },
+      });
+    }
 
     // Trigger Pusher event
     await triggerPusherEvent(`board-${boardId}`, "list:deleted", {

@@ -5,6 +5,7 @@ import List from "@/models/List";
 import Task from "@/models/Task";
 import User from "@/models/User";
 import mongoose from "mongoose";
+import { createActivity } from "@/lib/activity";
 
 export async function GET(request, { params }) {
   try {
@@ -92,7 +93,15 @@ export async function PUT(request, { params }) {
       );
     }
     const body = await request.json();
-    const { title, description, background, isFavorite, visibility } = body;
+    const { title, description, background, isFavorite, visibility, userId } = body;
+
+    const oldBoard = await Board.findById(id);
+    if (!oldBoard) {
+      return NextResponse.json(
+        { message: "Board not found" },
+        { status: 404 }
+      );
+    }
 
     const updateData = {};
     if (title !== undefined) updateData.title = title;
@@ -114,6 +123,25 @@ export async function PUT(request, { params }) {
         { message: "Board not found" },
         { status: 404 }
       );
+    }
+
+    // Log activity if board was updated (not just favorite toggle)
+    if (userId && (title !== undefined || description !== undefined || background !== undefined || visibility !== undefined)) {
+      const changes = [];
+      if (title !== undefined && title !== oldBoard.title) changes.push("title");
+      if (description !== undefined && description !== oldBoard.description) changes.push("description");
+      if (background !== undefined && background !== oldBoard.background) changes.push("background");
+      if (visibility !== undefined && visibility !== oldBoard.visibility) changes.push("visibility");
+
+      if (changes.length > 0) {
+        await createActivity({
+          boardId: id,
+          userId,
+          type: "board_updated",
+          description: `updated board "${board.title}"`,
+          metadata: { changes },
+        });
+      }
     }
 
     return NextResponse.json(
@@ -147,7 +175,10 @@ export async function DELETE(request, { params }) {
       );
     }
 
-    const board = await Board.findByIdAndDelete(id);
+    const body = await request.json().catch(() => ({}));
+    const { userId } = body;
+
+    const board = await Board.findById(id);
 
     if (!board) {
       return NextResponse.json(
@@ -156,9 +187,25 @@ export async function DELETE(request, { params }) {
       );
     }
 
+    const boardTitle = board.title;
+    const boardOwner = board.owner.toString();
+
+    await Board.findByIdAndDelete(id);
+
     await User.findByIdAndUpdate(board.owner, {
       $pull: { boards: board._id },
     });
+
+    // Log activity (use userId from request or board owner)
+    if (userId || boardOwner) {
+      await createActivity({
+        boardId: id,
+        userId: userId || boardOwner,
+        type: "board_deleted",
+        description: `deleted board "${boardTitle}"`,
+        metadata: { boardId: id },
+      });
+    }
 
     return NextResponse.json(
       { message: "Board deleted successfully" },
