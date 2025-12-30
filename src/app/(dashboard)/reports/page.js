@@ -113,12 +113,12 @@ export default function ReportsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 px-2 sm:px-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">Reports & Analytics</h1>
-          <p className="text-muted-foreground text-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="space-y-1 sm:space-y-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">Reports & Analytics</h1>
+          <p className="text-sm sm:text-base lg:text-lg text-muted-foreground">
             Track project performance and team productivity
           </p>
         </div>

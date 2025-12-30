@@ -83,7 +83,7 @@ const KeyboardShortcuts = () => {
     <>
       <button
         onClick={() => setShowModal(true)}
-        className="fixed bottom-4 right-4 z-40 p-3 bg-card border border-border rounded-lg shadow-lg hover:bg-accent transition-colors"
+        className="hidden md:flex fixed bottom-4 right-4 z-40 p-3 bg-card border border-border rounded-lg shadow-lg hover:bg-accent transition-colors items-center justify-center"
         title="Keyboard Shortcuts (⌘/)"
       >
         <Keyboard className="h-5 w-5" />

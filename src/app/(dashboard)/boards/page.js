@@ -273,58 +273,65 @@ export default function BoardsPage() {
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 px-2 sm:px-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">Boards</h1>
-          <p className="text-muted-foreground text-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="space-y-1 sm:space-y-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">Boards</h1>
+          <p className="text-sm sm:text-base lg:text-lg text-muted-foreground">
             Manage your project boards and collaborate with your team
           </p>
         </div>
-        <Button onClick={() => setShowCreateModal(true)} className="shadow-sm hover:shadow-md transition-shadow">
+        <Button 
+          onClick={() => setShowCreateModal(true)} 
+          className="shadow-sm hover:shadow-md transition-shadow w-full sm:w-auto text-sm sm:text-base"
+          size="sm"
+        >
           <Plus className="h-4 w-4 mr-2" />
           Create Board
         </Button>
       </div>
 
       {/* Search and View Toggle */}
-      <div className="flex items-center gap-4 flex-wrap">
-        <div className="flex-1 relative max-w-md">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 sm:gap-4">
+        <div className="flex-1 relative max-w-full sm:max-w-md">
           <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search boards..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10 h-10 bg-muted/50 border-border/50 focus:bg-background focus:border-primary/50 transition-all duration-200"
+            className="pl-10 h-10 bg-muted/50 border-border/50 focus:bg-background focus:border-primary/50 transition-all duration-200 text-sm sm:text-base"
           />
         </div>
-        <Button
-          variant={showArchived ? "default" : "outline"}
-          size="sm"
-          onClick={() => setShowArchived(!showArchived)}
-          className="shadow-sm hover:shadow-md transition-shadow"
-        >
-          <Archive className="h-4 w-4 mr-2" />
-          {showArchived ? "Hide Archived" : "Show Archived"}
-        </Button>
-        <div className="flex items-center gap-1 border border-border/50 rounded-lg p-1 bg-muted/30">
+        <div className="flex items-center gap-2 sm:gap-4">
           <Button
-            variant={viewMode === "grid" ? "default" : "ghost"}
-            size="icon"
-            onClick={() => setViewMode("grid")}
-            className="h-8 w-8"
+            variant={showArchived ? "default" : "outline"}
+            size="sm"
+            onClick={() => setShowArchived(!showArchived)}
+            className="shadow-sm hover:shadow-md transition-shadow flex-1 sm:flex-initial text-xs sm:text-sm"
           >
-            <Grid className="h-4 w-4" />
+            <Archive className="h-4 w-4 mr-1 sm:mr-2" />
+            <span className="hidden sm:inline">{showArchived ? "Hide Archived" : "Show Archived"}</span>
+            <span className="sm:hidden">{showArchived ? "Hide" : "Archived"}</span>
           </Button>
-          <Button
-            variant={viewMode === "list" ? "default" : "ghost"}
-            size="icon"
-            onClick={() => setViewMode("list")}
-            className="h-8 w-8"
-          >
-            <List className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-1 border border-border/50 rounded-lg p-1 bg-muted/30">
+            <Button
+              variant={viewMode === "grid" ? "default" : "ghost"}
+              size="icon"
+              onClick={() => setViewMode("grid")}
+              className="h-8 w-8 sm:h-9 sm:w-9"
+            >
+              <Grid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === "list" ? "default" : "ghost"}
+              size="icon"
+              onClick={() => setViewMode("list")}
+              className="h-8 w-8 sm:h-9 sm:w-9"
+            >
+              <List className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -353,8 +360,8 @@ export default function BoardsPage() {
         <div
           className={
             viewMode === "grid"
-              ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
-              : "space-y-4"
+              ? "grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 sm:gap-6"
+              : "space-y-3 sm:space-y-4"
           }
         >
           {filteredBoards.map((board, index) => (

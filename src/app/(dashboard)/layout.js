@@ -93,7 +93,7 @@ export default function DashboardLayout({ children }) {
           paddingLeft: isDesktop && sidebarOpen ? `${sidebarWidth}px` : "0px",
         }}
       >
-        <div className="container mx-auto p-6">
+        <div className="container mx-auto p-3 sm:p-4 lg:p-6 max-w-full">
           <AnimatePresence mode="wait">
             <motion.div
               key={pathname}

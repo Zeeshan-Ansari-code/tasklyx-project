@@ -162,16 +162,20 @@ export default function CalendarPage() {
   const selectedDateTasks = selectedDate ? getTasksForDate(selectedDate) : [];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4 sm:space-y-6 lg:space-y-8 px-2 sm:px-0">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="space-y-2">
-          <h1 className="text-4xl font-bold tracking-tight">Calendar</h1>
-          <p className="text-muted-foreground text-lg">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 sm:gap-4">
+        <div className="space-y-1 sm:space-y-2">
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold tracking-tight">Calendar</h1>
+          <p className="text-sm sm:text-base lg:text-lg text-muted-foreground">
             View tasks by their due dates
           </p>
         </div>
-        <Button onClick={goToToday} className="shadow-sm hover:shadow-md transition-shadow">
+        <Button 
+          onClick={goToToday} 
+          className="shadow-sm hover:shadow-md transition-shadow w-full sm:w-auto text-sm sm:text-base"
+          size="sm"
+        >
           Today
         </Button>
       </div>
@@ -182,22 +186,22 @@ export default function CalendarPage() {
           <p className="text-muted-foreground">Loading calendar...</p>
         </div>
       ) : (
-        <div className="grid gap-6 lg:grid-cols-3">
+        <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
           {/* Calendar */}
-          <div className="lg:col-span-2 max-w-3xl w-full mx-auto">
+          <div className="lg:col-span-2 w-full">
             <Card className="border-border/50 shadow-sm">
-              <CardHeader className="pb-3">
-                <div className="flex items-center justify-between">
-                  <CardTitle className="text-2xl">
+              <CardHeader className="pb-3 px-4 sm:px-6">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <CardTitle className="text-xl sm:text-2xl">
                     {monthNames[currentDate.getMonth()]}{" "}
                     {currentDate.getFullYear()}
                   </CardTitle>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 self-start sm:self-auto">
                     <Button
                       variant="outline"
                       size="icon"
                       onClick={() => navigateMonth(-1)}
-                      className="hover:bg-accent transition-colors"
+                      className="hover:bg-accent transition-colors h-9 w-9 sm:h-10 sm:w-10"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </Button>
@@ -205,15 +209,15 @@ export default function CalendarPage() {
                       variant="outline"
                       size="icon"
                       onClick={() => navigateMonth(1)}
-                      className="hover:bg-accent transition-colors"
+                      className="hover:bg-accent transition-colors h-9 w-9 sm:h-10 sm:w-10"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </Button>
                   </div>
                 </div>
               </CardHeader>
-              <CardContent className="pt-2 pb-5">
-                <div className="grid grid-cols-7 gap-1.5 sm:gap-2">
+              <CardContent className="pt-2 pb-4 sm:pb-5 px-3 sm:px-6">
+                <div className="grid grid-cols-7 gap-1 sm:gap-1.5 md:gap-2">
                   {/* Day headers */}
                   {dayNames.map((day) => (
                     <div
@@ -272,28 +276,28 @@ export default function CalendarPage() {
           </div>
 
           {/* Selected Date Tasks */}
-          <div>
-            <Card className="border-border/50 shadow-sm sticky top-24">
-              <CardHeader>
-                <CardTitle>
+          <div className="lg:sticky lg:top-24">
+            <Card className="border-border/50 shadow-sm">
+              <CardHeader className="px-4 sm:px-6 pb-3">
+                <CardTitle className="text-lg sm:text-xl">
                   {selectedDate
                     ? formatDate(selectedDate)
                     : "Select a date"}
                 </CardTitle>
               </CardHeader>
-              <CardContent>
+              <CardContent className="px-4 sm:px-6">
                 {selectedDate ? (
                   selectedDateTasks.length > 0 ? (
-                    <div className="space-y-2.5">
+                    <div className="space-y-2 sm:space-y-2.5">
                       {selectedDateTasks.map((task) => (
                         <Link
                           key={task._id}
                           href={`/boards/${task.board}?task=${task._id}`}
                         >
-                          <div className="p-3.5 border border-border/50 rounded-xl hover:bg-accent/50 hover:border-primary/50 hover:shadow-md transition-all duration-200 cursor-pointer group">
+                          <div className="p-3 sm:p-3.5 border border-border/50 rounded-xl hover:bg-accent/50 hover:border-primary/50 hover:shadow-md transition-all duration-200 cursor-pointer group">
                             <div className="flex items-start justify-between gap-2">
                               <div className="flex-1 min-w-0">
-                                <p className="font-medium text-sm truncate">
+                                <p className="font-medium text-xs sm:text-sm truncate">
                                   {task.title}
                                 </p>
                                 {task.priority && (
@@ -307,13 +311,13 @@ export default function CalendarPage() {
                                         ? "warning"
                                         : "default"
                                     }
-                                    className="capitalize text-xs mt-1"
+                                    className="capitalize text-xs mt-1.5"
                                   >
                                     {task.priority}
                                   </Badge>
                                 )}
                               </div>
-                              <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+                              <Clock className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-muted-foreground shrink-0 mt-0.5" />
                             </div>
                           </div>
                         </Link>

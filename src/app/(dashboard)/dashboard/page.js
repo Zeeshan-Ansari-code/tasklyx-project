@@ -94,19 +94,19 @@ export default function DashboardPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6 px-2 sm:px-0">
       {/* Header */}
-      <div className="flex items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground mt-1">
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-sm sm:text-base text-muted-foreground mt-1">
             Welcome back! Here's what's happening with your projects.
           </p>
         </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3 sm:gap-4 grid-cols-2 md:grid-cols-2 lg:grid-cols-4">
         {statsData.map((stat) => {
           const Icon = stat.icon;
           return (
@@ -136,7 +136,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid gap-6 lg:grid-cols-3">
+      <div className="grid gap-4 sm:gap-6 grid-cols-1 lg:grid-cols-3">
         {/* Recent Boards */}
         <motion.div
           initial={{ opacity: 0, y: 10 }}
@@ -147,44 +147,48 @@ export default function DashboardPage() {
           {loading ? (
             <RecentBoardsSkeleton />
           ) : (
-          <Card className="h-[50vh]">
-          <CardHeader>
-            <CardTitle>Recent Boards</CardTitle>
+          <Card className="h-auto sm:h-[50vh] min-h-[300px] sm:min-h-[400px] flex flex-col">
+          <CardHeader className="pb-3 sm:pb-4">
+            <CardTitle className="text-lg sm:text-xl">Recent Boards</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
+          <CardContent className="flex-1 overflow-hidden flex flex-col space-y-3">
             {recentBoards.length === 0 ? (
               <div className="text-center py-4 text-muted-foreground">
                 No boards yet. Create your first board!
               </div>
             ) : (
-              recentBoards.map((board) => (
-                <Link
-                  key={board._id}
-                  href={`/boards/${board._id}`}
-                  className="flex items-center gap-4 p-4 rounded-lg border hover:shadow-md transition-shadow cursor-pointer"
-                >
-                  <div
-                    className={`h-16 w-16 rounded-lg ${board.background} shrink-0`}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">{board.name}</h3>
-                    <p className="text-sm text-muted-foreground truncate">
-                      {board.description}
-                    </p>
-                    <div className="flex items-center gap-4 mt-2 text-xs text-muted-foreground">
-                      <span>{board.tasks} tasks</span>
-                      <span>•</span>
-                      <span>{board.members} members</span>
+              <div className="flex-1 overflow-y-auto pr-2 space-y-3 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+                {recentBoards.map((board) => (
+                  <Link
+                    key={board._id}
+                    href={`/boards/${board._id}`}
+                    className="flex items-center gap-3 sm:gap-4 p-3 sm:p-4 rounded-lg border hover:shadow-md transition-shadow cursor-pointer"
+                  >
+                    <div
+                      className={`h-12 w-12 sm:h-16 sm:w-16 rounded-lg ${board.background} shrink-0`}
+                    />
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm sm:text-base truncate">{board.name}</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground truncate mt-0.5">
+                        {board.description}
+                      </p>
+                      <div className="flex items-center gap-3 sm:gap-4 mt-1.5 sm:mt-2 text-xs text-muted-foreground">
+                        <span>{board.tasks} tasks</span>
+                        <span>•</span>
+                        <span>{board.members} members</span>
+                      </div>
                     </div>
-                  </div>
-                </Link>
-              ))
+                  </Link>
+                ))}
+              </div>
             )}
-            <Link href="/boards">
-              <Button variant="outline" className="w-full">
-                View All Boards
-              </Button>
-            </Link>
+            <div className="pt-2 shrink-0">
+              <Link href="/boards">
+                <Button variant="outline" className="w-full text-sm sm:text-base">
+                  View All Boards
+                </Button>
+              </Link>
+            </div>
           </CardContent>
           </Card>
           )}
@@ -200,33 +204,33 @@ export default function DashboardPage() {
         {loading ? (
           <RecentActivitySkeleton />
         ) : (
-        <Card className="h-[50vh] flex flex-col">
-          <CardHeader className="shrink-0">
-            <CardTitle>Recent Activity</CardTitle>
+        <Card className="h-auto sm:h-[50vh] min-h-[300px] sm:min-h-[400px] flex flex-col">
+          <CardHeader className="shrink-0 pb-3 sm:pb-4">
+            <CardTitle className="text-lg sm:text-xl">Recent Activity</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden">
             {recentActivity.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
+              <div className="text-center py-4 text-sm sm:text-base text-muted-foreground">
                 No recent activity
               </div>
             ) : (
-              <div className="h-full max-h-[500px] overflow-y-auto pr-2 space-y-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+              <div className="h-full max-h-[500px] overflow-y-auto pr-2 space-y-3 sm:space-y-4 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                 {recentActivity.map((activity) => (
-                  <div key={activity._id} className="flex items-start gap-3">
+                  <div key={activity._id} className="flex items-start gap-2 sm:gap-3">
                     <Avatar
                       name={activity.userData?.name || activity.user}
                       src={activity.userData?.avatar}
                       size="sm"
                     />
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm">
+                      <p className="text-xs sm:text-sm leading-relaxed">
                         <span className="font-semibold">
                           {activity.userData?.name || activity.user}
                         </span>{" "}
                         <span className="text-muted-foreground">
                           {activity.action}
                         </span>{" "}
-                        <span className="font-medium">{activity.task}</span>
+                        <span className="font-medium break-words">{activity.task}</span>
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
                         {activity.time}
@@ -251,39 +255,39 @@ export default function DashboardPage() {
         {loading ? (
           <UpcomingDeadlinesSkeleton />
         ) : (
-        <Card className="h-[50vh] flex flex-col">
-          <CardHeader className="shrink-0">
-            <CardTitle>Upcoming Deadlines</CardTitle>
+        <Card className="h-auto sm:h-[50vh] min-h-[300px] sm:min-h-[400px] flex flex-col">
+          <CardHeader className="shrink-0 pb-3 sm:pb-4">
+            <CardTitle className="text-lg sm:text-xl">Upcoming Deadlines</CardTitle>
           </CardHeader>
           <CardContent className="flex-1 overflow-hidden">
             {upcomingDeadlines.length === 0 ? (
-              <div className="text-center py-4 text-muted-foreground">
+              <div className="text-center py-4 text-sm sm:text-base text-muted-foreground">
                 No upcoming deadlines
               </div>
             ) : (
-              <div className="h-full max-h-[500px] overflow-y-auto pr-2 space-y-3 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
+              <div className="h-full max-h-[500px] overflow-y-auto pr-2 space-y-2 sm:space-y-3 scrollbar-thin scrollbar-thumb-border scrollbar-track-transparent">
                 {upcomingDeadlines.map((task) => (
                   <div
                     key={task._id}
-                    className="flex items-center justify-between p-4 rounded-lg border hover:shadow-md transition-shadow"
+                    className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-3 p-3 sm:p-4 rounded-lg border hover:shadow-md transition-shadow"
                   >
                     <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <h4 className="font-semibold truncate">{task.title}</h4>
+                      <div className="flex items-start sm:items-center gap-2 flex-wrap">
+                        <h4 className="font-semibold text-sm sm:text-base truncate flex-1 min-w-0">{task.title}</h4>
                         <Badge
                           variant={priorityColors[task.priority]}
-                          className="capitalize shrink-0"
+                          className="capitalize shrink-0 text-xs"
                         >
                           {task.priority}
                         </Badge>
                       </div>
-                      <p className="text-sm text-muted-foreground mt-1">
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-1 truncate">
                         {task.board} • Due {formatDate(task.dueDate)}
                       </p>
                     </div>
                     {task.boardId && (
-                      <Link href={`/boards/${task.boardId}`} className="shrink-0">
-                        <Button size="sm">View</Button>
+                      <Link href={`/boards/${task.boardId}`} className="shrink-0 w-full sm:w-auto">
+                        <Button size="sm" className="w-full sm:w-auto text-xs sm:text-sm">View</Button>
                       </Link>
                     )}
                   </div>
