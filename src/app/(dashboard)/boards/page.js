@@ -375,14 +375,19 @@ export default function BoardsPage() {
             >
               <Link href={`/boards/${String(board._id)}`}>
                 <Card className="h-full cursor-pointer border-border/50 hover:shadow-lg hover:border-primary/20 transition-all duration-200 group overflow-hidden">
-                  <div
-                    className={`h-36 rounded-t-xl ${board.background} relative transition-transform duration-200 group-hover:scale-105`}
-                  >
-                    {board.isFavorite && (
-                      <div className="absolute top-3 right-3">
-                        <Star className="h-5 w-5 text-yellow-400 fill-yellow-400 drop-shadow-lg" />
+                  <div className="relative border-b border-border/30 bg-gradient-to-br from-muted/30 to-muted/10">
+                    <div className="p-4 pb-3 flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
+                          <span className="text-lg font-semibold text-primary">
+                            {board.title?.[0]?.toUpperCase() || "B"}
+                          </span>
+                        </div>
                       </div>
-                    )}
+                      {board.isFavorite && (
+                        <Star className="h-5 w-5 text-yellow-400 fill-yellow-400" />
+                      )}
+                    </div>
                   </div>
                   <CardContent className="p-5">
                     <h3 className="font-semibold text-lg mb-2 truncate group-hover:text-primary transition-colors">

@@ -161,7 +161,7 @@ export default function BoardDetailPage() {
     <div className="h-full flex flex-col">
       {/* Board Header - Enhanced with better spacing and visual hierarchy */}
       <div
-        className={` ${board.background} rounded-xl mb-8 p-8 text-white relative shadow-lg transition-all duration-300`}
+        className={` ${board?.background || ''} rounded-xl mb-8 p-8 text-white relative shadow-lg transition-all duration-300`}
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
@@ -175,8 +175,8 @@ export default function BoardDetailPage() {
               <ArrowLeft className="h-5 w-5" />
             </Button>
             <div className="space-y-1">
-              <h1 className="text-3xl font-bold tracking-tight">{board.title}</h1>
-              {board.description && (
+              <h1 className="text-3xl font-bold tracking-tight">{board?.title || 'Untitled Board'}</h1>
+              {board?.description && (
                 <p className="text-white/90 mt-2 text-base leading-relaxed max-w-2xl">
                   {board.description}
                 </p>
@@ -188,11 +188,11 @@ export default function BoardDetailPage() {
               variant="ghost"
               size="icon"
               className="text-white hover:bg-white/20 transition-all duration-200 hover:scale-110"
-              title={board.isFavorite ? "Remove from favorites" : "Add to favorites"}
+              title={board?.isFavorite ? "Remove from favorites" : "Add to favorites"}
             >
               <Star
                 className={`h-5 w-5 transition-all duration-200 ${
-                  board.isFavorite ? "fill-yellow-400 text-yellow-400" : ""
+                  board?.isFavorite ? "fill-yellow-400 text-yellow-400" : ""
                 }`}
               />
             </Button>
@@ -322,27 +322,27 @@ function getBoardMembers(board) {
   const members = [];
   
   // Add owner (exclude AI user)
-  if (board.owner && board.owner.email !== "ai@assistant.com") {
+  if (board?.owner && board?.owner?.email !== "ai@assistant.com") {
     members.push({
-      _id: board.owner._id || board.owner,
-      name: board.owner.name,
-      email: board.owner.email,
-      avatar: board.owner.avatar,
+      _id: board?.owner?._id || board?.owner,
+      name: board?.owner?.name,
+      email: board?.owner?.email,
+      avatar: board?.owner?.avatar,
     });
   }
   
   // Add other members (exclude AI user)
-  if (board.members && Array.isArray(board.members)) {
+  if (board?.members && Array.isArray(board.members)) {
     board.members.forEach((member) => {
-      if (member.user && member.user.email !== "ai@assistant.com") {
-        const userId = member.user._id || member.user;
+      if (member?.user && member?.user?.email !== "ai@assistant.com") {
+        const userId = member?.user?._id || member?.user;
         // Avoid duplicates (owner might also be in members)
-        if (!members.find((m) => (m._id || m) === userId)) {
+        if (!members.find((m) => (m?._id || m) === userId)) {
           members.push({
             _id: userId,
-            name: member.user.name,
-            email: member.user.email,
-            avatar: member.user.avatar,
+            name: member?.user?.name,
+            email: member?.user?.email,
+            avatar: member?.user?.avatar,
           });
         }
       }

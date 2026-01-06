@@ -1,6 +1,8 @@
+import { memo } from "react";
+import Image from "next/image";
 import { cn, getInitials } from "@/lib/utils";
 
-const Avatar = ({ src, alt, name, className, size = "default" }) => {
+const Avatar = memo(({ src, alt, name, className, size = "default" }) => {
   const sizes = {
     sm: "h-8 w-8 text-xs",
     default: "h-10 w-10 text-sm",
@@ -17,10 +19,14 @@ const Avatar = ({ src, alt, name, className, size = "default" }) => {
       )}
     >
       {src ? (
-        <img
+        <Image
           src={src}
           alt={alt || name || "Avatar"}
+          width={size === "sm" ? 32 : size === "lg" ? 48 : size === "xl" ? 64 : 40}
+          height={size === "sm" ? 32 : size === "lg" ? 48 : size === "xl" ? 64 : 40}
           className="aspect-square h-full w-full object-cover"
+          loading="lazy"
+          unoptimized={src?.includes('cloudinary') || src?.startsWith('http')}
         />
       ) : (
         <div className="flex h-full w-full items-center justify-center bg-primary text-primary-foreground font-semibold">
@@ -29,6 +35,8 @@ const Avatar = ({ src, alt, name, className, size = "default" }) => {
       )}
     </div>
   );
-};
+});
+
+Avatar.displayName = "Avatar";
 
 export default Avatar;

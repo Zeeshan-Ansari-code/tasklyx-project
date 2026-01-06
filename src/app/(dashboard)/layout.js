@@ -1,11 +1,12 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import { AnimatePresence, motion } from "framer-motion";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import KeyboardShortcuts from "@/components/ui/KeyboardShortcuts";
+import ErrorBoundary from "@/components/ui/ErrorBoundary";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
 
@@ -18,17 +19,21 @@ export default function DashboardLayout({ children }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [isDesktop, setIsDesktop] = useState(false);
 
-  // Handle responsive sidebar behavior
+  // Handle responsive sidebar behavior - memoized and throttled
   useEffect(() => {
     if (typeof window === "undefined") return;
 
+    let resizeTimeout;
     const handleResize = () => {
-      const desktop = window.innerWidth >= 1024; // lg breakpoint
-      setIsDesktop(desktop);
-      if (desktop) {
-        // Always open sidebar on desktop
-        setSidebarOpen(true);
-      }
+      clearTimeout(resizeTimeout);
+      resizeTimeout = setTimeout(() => {
+        const desktop = window.innerWidth >= 1024; // lg breakpoint
+        setIsDesktop(desktop);
+        if (desktop) {
+          // Always open sidebar on desktop
+          setSidebarOpen(true);
+        }
+      }, 150); // Throttle resize events
     };
 
     // Set initial state
@@ -39,8 +44,11 @@ export default function DashboardLayout({ children }) {
     }
 
     // Listen for resize events
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener("resize", handleResize, { passive: true });
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      clearTimeout(resizeTimeout);
+    };
   }, []);
 
   // Redirect to login if not authenticated
@@ -70,48 +78,66 @@ export default function DashboardLayout({ children }) {
     return null;
   }
 
+  const handleMenuClick = useCallback(() => {
+    setSidebarOpen((prev) => !prev);
+  }, []);
+
+  const handleSidebarClose = useCallback(() => {
+    setSidebarOpen(false);
+  }, []);
+
+  const handleCollapseChange = useCallback((collapsed) => {
+    setSidebarCollapsed(collapsed);
+  }, []);
+
+  const sidebarPadding = useMemo(() => {
+    return isDesktop && sidebarOpen ? `${sidebarWidth}px` : "0px";
+  }, [isDesktop, sidebarOpen, sidebarWidth]);
+
   return (
-    <div className={`min-h-screen transition-all duration-500 ease-in-out ${theme === "light" ? "bg-linear-to-br from-sky-50 via-blue-50 to-indigo-50" : "bg-background"}`}>
-      <Navbar
-        onMenuClick={() => setSidebarOpen(!sidebarOpen)}
-        user={user}
-        sidebarOpen={sidebarOpen}
-        sidebarCollapsed={sidebarCollapsed}
-        sidebarWidth={sidebarWidth}
-        isDesktop={isDesktop}
-      />
-      
-      <Sidebar
-        isOpen={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        collapsed={sidebarCollapsed}
-        onCollapseChange={setSidebarCollapsed}
-      />
+    <ErrorBoundary>
+      <div className={`min-h-screen transition-all duration-500 ease-in-out ${theme === "light" ? "bg-linear-to-br from-sky-50 via-blue-50 to-indigo-50" : "bg-background"}`}>
+        <Navbar
+          onMenuClick={handleMenuClick}
+          user={user}
+          sidebarOpen={sidebarOpen}
+          sidebarCollapsed={sidebarCollapsed}
+          sidebarWidth={sidebarWidth}
+          isDesktop={isDesktop}
+        />
+        
+        <Sidebar
+          isOpen={sidebarOpen}
+          onClose={handleSidebarClose}
+          collapsed={sidebarCollapsed}
+          onCollapseChange={handleCollapseChange}
+        />
 
-      {/* Main content with dynamic padding */}
-      <main
-        className="min-h-[calc(100vh-4rem)] transition-all duration-300 ease-in-out"
-        style={{
-          paddingLeft: isDesktop && sidebarOpen ? `${sidebarWidth}px` : "0px",
-        }}
-      >
-        <div className="container mx-auto p-3 sm:p-4 lg:p-6 max-w-full">
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={pathname}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{ duration: 0.18, ease: "easeOut" }}
-            >
-              {children}
-            </motion.div>
-          </AnimatePresence>
-        </div>
-      </main>
+        {/* Main content with dynamic padding */}
+        <main
+          className="min-h-[calc(100vh-4rem)] transition-all duration-300 ease-in-out"
+          style={{
+            paddingLeft: sidebarPadding,
+          }}
+        >
+          <div className="container mx-auto p-3 sm:p-4 lg:p-6 max-w-full">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={pathname}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -8 }}
+                transition={{ duration: 0.18, ease: "easeOut" }}
+              >
+                {children}
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </main>
 
-      {/* Keyboard Shortcuts */}
-      <KeyboardShortcuts />
-    </div>
+        {/* Keyboard Shortcuts */}
+        <KeyboardShortcuts />
+      </div>
+    </ErrorBoundary>
   );
 }

@@ -110,14 +110,19 @@ export default function ProjectsPage() {
           {filteredBoards.map((board) => (
             <Link key={board._id} href={`/boards/${board._id}`}>
               <Card className="h-full cursor-pointer border-border/50 hover:shadow-lg hover:border-primary/20 transition-all duration-200 group overflow-hidden">
-                <div
-                  className={`h-36 rounded-t-xl ${board.background || "bg-blue-500"} relative transition-transform duration-200 group-hover:scale-105`}
-                >
-                  {board.isFavorite && (
-                    <div className="absolute top-3 right-3">
-                      <span className="text-yellow-400 text-xl drop-shadow-lg">★</span>
+                <div className="relative border-b border-border/30 bg-gradient-to-br from-muted/30 to-muted/10">
+                  <div className="p-4 pb-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20 shadow-sm">
+                        <span className="text-lg font-semibold text-primary">
+                          {board.title?.[0]?.toUpperCase() || "B"}
+                        </span>
+                      </div>
                     </div>
-                  )}
+                    {board.isFavorite && (
+                      <span className="text-yellow-400 text-xl">★</span>
+                    )}
+                  </div>
                 </div>
                 <CardContent className="p-5">
                   <h3 className="font-semibold text-lg mb-2 truncate group-hover:text-primary transition-colors">

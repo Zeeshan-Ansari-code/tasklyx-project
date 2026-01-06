@@ -17,6 +17,7 @@ import {
   UserCog,
   Shield,
   Bot,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import Button from "../ui/Button";
@@ -84,6 +85,11 @@ const Sidebar = ({ isOpen, onClose, collapsed: externalCollapsed, onCollapseChan
       title: "AI Assistant",
       icon: Bot,
       href: "/ai-chat",
+    },
+    {
+      title: "Chat",
+      icon: MessageSquare,
+      href: "/chat",
     },
     {
       title: "Boards",

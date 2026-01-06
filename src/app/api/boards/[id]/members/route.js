@@ -7,6 +7,7 @@ import { triggerPusherEvent } from "@/lib/pusher";
 import { createActivity } from "@/lib/activity";
 import { createNotification } from "@/lib/notifications";
 import { triggerWebhooks } from "@/lib/webhooks";
+import { syncBoardGroupMembers, removeUserFromBoardGroup } from "@/lib/chat";
 
 // POST add member to board
 export async function POST(request, { params }) {
@@ -130,6 +131,14 @@ export async function POST(request, { params }) {
       role: role,
     });
 
+    // Sync group members
+    try {
+      await syncBoardGroupMembers(id);
+    } catch (error) {
+      console.error("Failed to sync board group members:", error);
+      // Don't fail member addition if group sync fails
+    }
+
     return NextResponse.json(
       {
         message: "Member added successfully",
@@ -238,6 +247,14 @@ export async function DELETE(request, { params }) {
       boardId: id,
       memberId: userId,
     });
+
+    // Remove user from board group
+    try {
+      await removeUserFromBoardGroup(id, userId);
+    } catch (error) {
+      console.error("Failed to remove user from board group:", error);
+      // Don't fail member removal if group sync fails
+    }
 
     return NextResponse.json(
       {

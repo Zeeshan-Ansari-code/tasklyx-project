@@ -9,12 +9,28 @@ import {
   sendTaskCommentEmail,
   sendBoardInviteEmail,
 } from "./email";
+import { triggerPusherEvent } from "./pusher";
 
 export async function createNotification(data) {
   try {
     await connectDB();
     console.log(`[Notification] Creating notification: type=${data?.type}, user=${data?.user}`);
     const notification = await Notification.create(data);
+    
+    // Trigger Pusher event for real-time notification
+    if (data?.user) {
+      try {
+        await triggerPusherEvent(`user-${data.user}`, "notification:new", {
+          notification: await Notification.findById(notification._id)
+            .populate("relatedUser", "name email avatar")
+            .populate("relatedTask", "title")
+            .populate("relatedBoard", "title")
+            .lean(),
+        });
+      } catch (pusherError) {
+        console.error("[Notification] Pusher error:", pusherError);
+      }
+    }
     
     // Send email notification if user has email notifications enabled
     if (data?.user) {

@@ -194,9 +194,9 @@ const TaskCard = memo(({ task, onEdit, onDelete, onUpdate }) => {
       </div>
 
       {/* Labels */}
-      {task?.labels && task.labels.length > 0 && (
+      {task?.labels && task?.labels?.length > 0 && (
         <div className="flex gap-1 mb-2 flex-wrap">
-          {task.labels.map((label, idx) => (
+          {task?.labels?.map((label, idx) => (
             <div
               key={idx}
               className="h-2 w-12 rounded-full"
@@ -212,10 +212,10 @@ const TaskCard = memo(({ task, onEdit, onDelete, onUpdate }) => {
           {/* Priority */}
           {task?.priority && (
             <Badge 
-              variant={priorityColors[task.priority] || "default"} 
+              variant={priorityColors[task?.priority] || "default"} 
               className="text-xs capitalize font-medium px-2 py-0.5"
             >
-              {task.priority}
+              {task?.priority}
             </Badge>
           )}
 
@@ -231,16 +231,16 @@ const TaskCard = memo(({ task, onEdit, onDelete, onUpdate }) => {
                 "h-3.5 w-3.5",
                 isOverdue && "text-destructive"
               )} />
-              <span>{formatDate(task.dueDate)}</span>
+              <span>{formatDate(task?.dueDate)}</span>
             </div>
           )}
         </div>
 
         {/* Assignees */}
-        {task?.assignees && task.assignees.length > 0 && (
+        {task?.assignees && task?.assignees?.length > 0 && (
           <div className="flex items-center gap-2">
             <div className="flex -space-x-2">
-              {task.assignees.slice(0, 3).map((assignee) => (
+              {task?.assignees?.slice(0, 3).map((assignee) => (
                 <Avatar
                   key={assignee?._id || assignee?.id}
                   name={assignee?.name || "Unknown"}
@@ -250,9 +250,9 @@ const TaskCard = memo(({ task, onEdit, onDelete, onUpdate }) => {
                   title={assignee?.name || "Unknown"}
                 />
               ))}
-              {task.assignees.length > 3 && (
+              {task?.assignees?.length > 3 && (
                 <div className="h-6 w-6 rounded-full bg-muted border-2 border-background flex items-center justify-center text-xs">
-                  +{task.assignees.length - 3}
+                  +{task?.assignees?.length - 3}
                 </div>
               )}
             </div>
@@ -260,13 +260,13 @@ const TaskCard = memo(({ task, onEdit, onDelete, onUpdate }) => {
             <div className="flex items-center gap-1 text-xs">
               <Users className="h-3 w-3" />
               <span className="max-w-[100px] truncate">
-                {task.assignees.slice(0, 2).map((assignee, idx) => (
+                {task?.assignees?.slice(0, 2).map((assignee, idx) => (
                   <span key={assignee?._id || assignee?.id}>
                     {assignee?.name || "Unknown"}
-                    {idx < Math.min(task.assignees.length, 2) - 1 && ", "}
+                    {idx < Math.min(task?.assignees?.length || 0, 2) - 1 && ", "}
                   </span>
                 ))}
-                {task.assignees.length > 2 && ` +${task.assignees.length - 2}`}
+                {task?.assignees?.length > 2 && ` +${task?.assignees?.length - 2}`}
               </span>
             </div>
           </div>

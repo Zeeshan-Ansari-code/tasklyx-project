@@ -4,6 +4,7 @@ import Board from "@/models/Board";
 import User from "@/models/User";
 import mongoose from "mongoose";
 import { createActivity } from "@/lib/activity";
+import { createBoardGroup } from "@/lib/chat";
 
 // GET all boards for a user
 export async function GET(request) {
@@ -125,6 +126,14 @@ export async function POST(request) {
       description: `created board "${title}"`,
       metadata: { boardId: board._id.toString() },
     });
+
+    // Create group conversation for the board
+    try {
+      await createBoardGroup(board._id);
+    } catch (error) {
+      console.error("Failed to create board group:", error);
+      // Don't fail board creation if group creation fails
+    }
 
     return NextResponse.json(
       {

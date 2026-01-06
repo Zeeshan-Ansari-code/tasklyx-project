@@ -22,13 +22,19 @@ export const pusherServer = isPusherConfigured()
     })
   : null;
 
-// Client-side Pusher instance
+// Client-side Pusher instance with optimizations
 export const pusherClient =
   typeof window !== "undefined" &&
   process.env.NEXT_PUBLIC_PUSHER_KEY &&
   process.env.NEXT_PUBLIC_PUSHER_CLUSTER
     ? new PusherClient(process.env.NEXT_PUBLIC_PUSHER_KEY, {
         cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER,
+        enabledTransports: ['ws', 'wss'], // Prefer WebSocket for lower latency
+        forceTLS: true, // Force secure connection
+        authEndpoint: '/api/pusher/auth', // Auth endpoint if needed
+        // Connection optimization
+        disableStats: true, // Disable stats collection for better performance
+        enableLogging: false, // Disable logging in production
       })
     : null;
 

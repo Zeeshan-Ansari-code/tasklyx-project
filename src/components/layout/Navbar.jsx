@@ -2,27 +2,57 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Menu, Bell, Search, Plus, LogOut, User as UserIcon, Bot } from "lucide-react";
+import { Menu, Bell, Search, Plus, LogOut, User as UserIcon, Bot, Video } from "lucide-react";
 import Button from "../ui/Button";
 import Avatar from "../ui/Avatar";
 import Input from "../ui/Input";
 import ThemeToggle from "../ui/ThemeToggle";
 import NotificationsDropdown from "./NotificationsDropdown";
 import SearchDropdown from "./SearchDropdown";
+import IncomingCallModal from "../meetings/IncomingCallModal";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useTheme } from "@/context/ThemeContext";
+import { pusherClient } from "@/lib/pusher";
 
-const Navbar = ({ onMenuClick, user, sidebarOpen, sidebarCollapsed, sidebarWidth, isDesktop = false }) => {
+const Navbar = ({ onMenuClick, sidebarOpen, sidebarCollapsed, sidebarWidth, isDesktop = false }) => {
   const [showSearch, setShowSearch] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [incomingCall, setIncomingCall] = useState(null);
   const desktopMenuRef = useRef(null);
   const mobileMenuRef = useRef(null);
   const searchRef = useRef(null);
   const router = useRouter();
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
   const { theme } = useTheme();
+
+  // Listen for incoming meeting calls
+  useEffect(() => {
+    if (user?.id && pusherClient) {
+      const userChannel = pusherClient.subscribe(`user-${user.id}`);
+      
+      userChannel.bind("meeting:invited", (data) => {
+        if (data.meeting) {
+          setIncomingCall({
+            type: "meeting",
+            meetingId: data.meeting.meetingId,
+            meetingTitle: data.meeting.title,
+            caller: data.meeting.host,
+            meeting: data.meeting,
+          });
+        }
+      });
+      
+      return () => {
+        try {
+          pusherClient.unsubscribe(`user-${user.id}`);
+        } catch (error) {
+          // Ignore
+        }
+      };
+    }
+  }, [user?.id]);
 
   // Close menu when clicking outside
   useEffect(() => {
@@ -156,6 +186,29 @@ const Navbar = ({ onMenuClick, user, sidebarOpen, sidebarCollapsed, sidebarWidth
             title="AI Assistant"
           >
             <Bot className="h-5 w-5" />
+          </Button>
+
+          {/* Meetings Button */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="hidden sm:flex hover:bg-primary/10 transition-colors"
+            onClick={() => router.push("/meetings")}
+            title="Meetings"
+          >
+            <Video className="h-4 w-4 mr-2" />
+            <span className="text-primary font-medium">
+              Meeting
+            </span>
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="sm:hidden hover:bg-primary/10 hover:text-primary transition-colors"
+            onClick={() => router.push("/meetings")}
+            title="Meetings"
+          >
+            <Video className="h-5 w-5" />
           </Button>
 
           {/* Create Button */}
@@ -297,6 +350,21 @@ const Navbar = ({ onMenuClick, user, sidebarOpen, sidebarCollapsed, sidebarWidth
             />
           </div>
         </div>
+      )}
+
+      {/* Incoming Call Modal */}
+      {incomingCall && (
+        <IncomingCallModal
+          call={incomingCall}
+          onAccept={() => {
+            setIncomingCall(null);
+            router.push(`/meetings/${incomingCall.meetingId}`);
+          }}
+          onReject={async () => {
+            setIncomingCall(null);
+          }}
+          onClose={() => setIncomingCall(null)}
+        />
       )}
     </nav>
   );

@@ -8,6 +8,7 @@ import { formatDateTime } from "@/lib/utils";
 import { useAuth } from "@/context/AuthContext";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
+import { pusherClient } from "@/lib/pusher";
 
 const NotificationsDropdown = () => {
   const { user } = useAuth();
@@ -21,11 +22,28 @@ const NotificationsDropdown = () => {
   useEffect(() => {
     if (user?.id) {
       fetchNotifications();
-      // Poll for new notifications every 30 seconds
-      const interval = setInterval(fetchNotifications, 30000);
-      return () => clearInterval(interval);
+      
+      // Set up Pusher for real-time notifications
+      if (pusherClient) {
+        const channel = pusherClient.subscribe(`user-${user.id}`);
+        
+        channel.bind("notification:new", (data) => {
+          if (data.notification) {
+            setNotifications((prev) => [data.notification, ...prev]);
+            setUnreadCount((prev) => prev + 1);
+          }
+        });
+        
+        return () => {
+          try {
+            pusherClient.unsubscribe(`user-${user.id}`);
+          } catch (error) {
+            // Ignore
+          }
+        };
+      }
     }
-  }, [user]);
+  }, [user?.id]);
 
   // Close dropdown when clicking outside
   useEffect(() => {

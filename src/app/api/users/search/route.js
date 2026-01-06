@@ -3,37 +3,46 @@ import connectDB from "@/lib/db";
 import User from "@/models/User";
 import mongoose from "mongoose";
 
+// GET - Search users for chat/group creation
 export async function GET(request) {
   try {
     await connectDB();
 
     const { searchParams } = new URL(request.url);
-    const query = searchParams.get("q");
+    const query = searchParams.get("q") || "";
+    const currentUserId = searchParams.get("userId");
 
-    if (!query || query.trim().length < 2) {
+    if (!currentUserId || !mongoose.Types.ObjectId.isValid(currentUserId)) {
       return NextResponse.json(
-        { message: "Search query must be at least 2 characters" },
+        { message: "Valid user ID is required" },
         { status: 400 }
       );
     }
 
-    // Search users by name or email (exclude AI user)
-    const users = await User.find({
-      $or: [
+    // Build search query
+    const searchQuery = {
+      _id: { $ne: currentUserId }, // Exclude current user
+      email: { $ne: "ai@assistant.com" }, // Exclude AI user
+    };
+
+    if (query.trim()) {
+      searchQuery.$or = [
         { name: { $regex: query, $options: "i" } },
         { email: { $regex: query, $options: "i" } },
-      ],
-      email: { $ne: "ai@assistant.com" },
-    })
-      .select("name email avatar")
-      .limit(10);
+      ];
+    }
+
+    const users = await User.find(searchQuery)
+      .select("name email avatar role")
+      .limit(20)
+      .lean();
 
     return NextResponse.json({ users }, { status: 200 });
   } catch (error) {
+    console.error("[Search Users] Error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
       { status: 500 }
     );
   }
 }
-
