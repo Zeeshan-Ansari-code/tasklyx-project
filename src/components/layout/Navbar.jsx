@@ -1,7 +1,8 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Menu, Bell, Search, Plus, LogOut, User as UserIcon, Bot, Video } from "lucide-react";
 import Button from "../ui/Button";
 import Avatar from "../ui/Avatar";
@@ -87,7 +88,7 @@ const Navbar = ({ onMenuClick, sidebarOpen, sidebarCollapsed, sidebarWidth, isDe
 
   return (
     <nav
-      className={`sticky top-0 z-40 w-full border-b border-border/40 transition-all duration-500 ease-in-out ${theme === "light" ? "bg-linear-to-r from-slate-50/98 via-gray-50/98 to-neutral-50/98" : "bg-background/80"} backdrop-blur-xl supports-backdrop-filter:bg-background/80 shadow-sm overflow-hidden`}
+      className={`sticky top-0 z-40 w-full border-b border-border/40 transition-all duration-500 ease-in-out ${theme === "light" ? "bg-linear-to-r from-slate-50/98 via-gray-50/98 to-neutral-50/98" : "bg-background/80"} backdrop-blur-xl supports-backdrop-filter:bg-background/80 shadow-sm`}
       style={{
         paddingLeft: isDesktop && sidebarOpen ? `${sidebarWidth}px` : "0px",
       }}
@@ -249,22 +250,21 @@ const Navbar = ({ onMenuClick, sidebarOpen, sidebarCollapsed, sidebarWidth, isDe
             </button>
 
             {showUserMenu && (
-              <div className="absolute right-0 top-12 bg-card border border-border/50 rounded-xl shadow-xl z-100 min-w-[220px] max-w-[calc(100vw-2rem)] animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute right-0 top-full mt-2 bg-card border border-border/50 rounded-xl shadow-xl z-[9999] min-w-[220px] max-w-[calc(100vw-2rem)] animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="p-4 border-b border-border/50">
                   <p className="font-semibold text-sm text-foreground">{user?.name}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{user?.email}</p>
                 </div>
                 <div className="p-2">
-                  <button
-                    onClick={() => {
-                      router.push("/settings");
-                      setShowUserMenu(false);
-                    }}
+                  <Link 
+                    href="/settings" 
+                    prefetch={true}
+                    onClick={() => setShowUserMenu(false)}
                     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-accent rounded-lg text-left transition-colors font-medium"
                   >
                     <UserIcon className="h-4 w-4" />
                     Profile Settings
-                  </button>
+                  </Link>
                   <button
                     type="button"
                     onClick={(e) => handleLogout(e)}
@@ -282,26 +282,28 @@ const Navbar = ({ onMenuClick, sidebarOpen, sidebarCollapsed, sidebarWidth, isDe
         {/* Mobile Right Section */}
         <div className="flex md:hidden items-center gap-0.5 sm:gap-1 shrink-0 ml-auto">
           {/* Meeting Button (Mobile) */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 sm:h-10 sm:w-10 hover:bg-primary/10 hover:text-primary transition-colors shrink-0"
-            onClick={() => router.push("/meetings")}
-            title="Meetings"
-          >
-            <Video className="h-4 w-4 sm:h-5 sm:w-5" />
-          </Button>
+          <Link href="/meetings" prefetch={true}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 sm:h-10 sm:w-10 hover:bg-primary/10 hover:text-primary transition-colors shrink-0"
+              title="Meetings"
+            >
+              <Video className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+          </Link>
           
           {/* AI Assistant Button (Mobile) */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-9 w-9 sm:h-10 sm:w-10 hover:bg-primary/10 hover:text-primary transition-colors shrink-0"
-            onClick={() => router.push("/ai-chat")}
-            title="AI Assistant"
-          >
-            <Bot className="h-4 w-4 sm:h-5 sm:w-5" />
-          </Button>
+          <Link href="/ai-chat" prefetch={true}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 sm:h-10 sm:w-10 hover:bg-primary/10 hover:text-primary transition-colors shrink-0"
+              title="AI Assistant"
+            >
+              <Bot className="h-4 w-4 sm:h-5 sm:w-5" />
+            </Button>
+          </Link>
           
           <div className="shrink-0">
             <ThemeToggle />
@@ -324,7 +326,7 @@ const Navbar = ({ onMenuClick, sidebarOpen, sidebarCollapsed, sidebarWidth, isDe
               />
             </button>
             {showUserMenu && (
-              <div className="absolute right-0 top-12 bg-card border border-border/50 rounded-xl shadow-xl z-[100] min-w-[180px] max-w-[calc(100vw-2rem)] animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute right-0 top-full mt-2 bg-card border border-border/50 rounded-xl shadow-xl z-[9999] min-w-[180px] max-w-[calc(100vw-2rem)] animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="p-3 sm:p-4 border-b border-border/50">
                   <p className="font-semibold text-sm text-foreground truncate">{user?.name || "User"}</p>
                   <p className="text-xs text-muted-foreground mt-0.5 truncate">{user?.email || ""}</p>

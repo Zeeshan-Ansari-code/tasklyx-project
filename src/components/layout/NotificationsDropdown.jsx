@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { Bell, Check, CheckCheck } from "lucide-react";
 import Button from "../ui/Button";
 import Avatar from "../ui/Avatar";
@@ -126,7 +126,7 @@ const NotificationsDropdown = () => {
     }
   };
 
-  const handleNotificationClick = (notification) => {
+  const handleNotificationClick = useCallback((notification) => {
     if (!notification.read) {
       markAsRead(notification._id);
     }
@@ -154,10 +154,11 @@ const NotificationsDropdown = () => {
         }
       }
       
+      // Use router for client-side navigation with prefetch
       router.push(link);
       setShowDropdown(false);
     }
-  };
+  }, []);
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -174,7 +175,7 @@ const NotificationsDropdown = () => {
       </Button>
 
       {showDropdown && (
-        <div className="absolute right-0 top-12 w-80 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-lg shadow-xl z-[100] max-h-[calc(100vh-8rem)] flex flex-col">
+        <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-lg shadow-xl z-[9999] max-h-[calc(100vh-8rem)] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border">
             <h3 className="font-semibold">Notifications</h3>

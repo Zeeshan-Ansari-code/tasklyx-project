@@ -61,6 +61,23 @@ export default function DashboardLayout({ children }) {
   // Calculate sidebar width
   const sidebarWidth = sidebarCollapsed ? 64 : 256; // 64px = collapsed, 256px = expanded
 
+  // All hooks must be called before any conditional returns
+  const handleMenuClick = useCallback(() => {
+    setSidebarOpen((prev) => !prev);
+  }, []);
+
+  const handleSidebarClose = useCallback(() => {
+    setSidebarOpen(false);
+  }, []);
+
+  const handleCollapseChange = useCallback((collapsed) => {
+    setSidebarCollapsed(collapsed);
+  }, []);
+
+  const sidebarPadding = useMemo(() => {
+    return isDesktop && sidebarOpen ? `${sidebarWidth}px` : "0px";
+  }, [isDesktop, sidebarOpen, sidebarWidth]);
+
   // Show loading or nothing while checking auth
   if (loading) {
     return (
@@ -77,22 +94,6 @@ export default function DashboardLayout({ children }) {
   if (!user) {
     return null;
   }
-
-  const handleMenuClick = useCallback(() => {
-    setSidebarOpen((prev) => !prev);
-  }, []);
-
-  const handleSidebarClose = useCallback(() => {
-    setSidebarOpen(false);
-  }, []);
-
-  const handleCollapseChange = useCallback((collapsed) => {
-    setSidebarCollapsed(collapsed);
-  }, []);
-
-  const sidebarPadding = useMemo(() => {
-    return isDesktop && sidebarOpen ? `${sidebarWidth}px` : "0px";
-  }, [isDesktop, sidebarOpen, sidebarWidth]);
 
   return (
     <ErrorBoundary>
