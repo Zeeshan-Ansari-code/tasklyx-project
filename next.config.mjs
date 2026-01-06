@@ -26,7 +26,9 @@ const nextConfig = {
   },
 
   // Turbopack configuration (Next.js 16+ uses Turbopack by default)
-  turbopack: {},
+  turbopack: {
+    root: process.cwd(), // Set explicit root to silence warning
+  },
   
   // Reduce JavaScript bundle size
   compiler: {

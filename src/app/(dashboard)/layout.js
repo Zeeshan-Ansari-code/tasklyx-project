@@ -1,8 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useRouter, usePathname } from "next/navigation";
-import { AnimatePresence, motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 import Navbar from "@/components/layout/Navbar";
 import Sidebar from "@/components/layout/Sidebar";
 import KeyboardShortcuts from "@/components/ui/KeyboardShortcuts";
@@ -121,17 +120,7 @@ export default function DashboardLayout({ children }) {
           }}
         >
           <div className="container mx-auto p-3 sm:p-4 lg:p-6 max-w-full">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={pathname}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.1, ease: "easeOut" }}
-              >
-                {children}
-              </motion.div>
-            </AnimatePresence>
+            {children}
           </div>
         </main>
 
