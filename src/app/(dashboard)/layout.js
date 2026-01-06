@@ -96,7 +96,7 @@ export default function DashboardLayout({ children }) {
 
   return (
     <ErrorBoundary>
-      <div className={`min-h-screen transition-all duration-500 ease-in-out ${theme === "light" ? "bg-linear-to-br from-sky-50 via-blue-50 to-indigo-50" : "bg-background"}`}>
+      <div className={`min-h-screen transition-all duration-500 ease-in-out ${theme === "light" ? "bg-linear-to-br from-slate-50 via-gray-50 to-neutral-50" : "bg-background"}`}>
         <Navbar
           onMenuClick={handleMenuClick}
           user={user}

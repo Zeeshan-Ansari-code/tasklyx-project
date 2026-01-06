@@ -11,6 +11,7 @@ import { pusherClient } from "@/lib/pusher";
 import IncomingCallModal from "@/components/meetings/IncomingCallModal";
 import { useRouter } from "next/navigation";
 import { debounce } from "@/lib/performance";
+import { ChatSkeleton } from "@/components/ui/LoadingSkeleton";
 
 export default function ChatPage() {
   const { user } = useAuth();

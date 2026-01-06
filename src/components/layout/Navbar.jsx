@@ -87,12 +87,12 @@ const Navbar = ({ onMenuClick, sidebarOpen, sidebarCollapsed, sidebarWidth, isDe
 
   return (
     <nav
-      className={`sticky top-0 z-40 w-full border-b border-border/40 transition-all duration-500 ease-in-out ${theme === "light" ? "bg-linear-to-r from-sky-50/98 via-blue-50/98 to-indigo-50/98" : "bg-background/80"} backdrop-blur-xl supports-backdrop-filter:bg-background/80 shadow-sm`}
+      className={`sticky top-0 z-40 w-full border-b border-border/40 transition-all duration-500 ease-in-out ${theme === "light" ? "bg-linear-to-r from-slate-50/98 via-gray-50/98 to-neutral-50/98" : "bg-background/80"} backdrop-blur-xl supports-backdrop-filter:bg-background/80 shadow-sm overflow-hidden`}
       style={{
         paddingLeft: isDesktop && sidebarOpen ? `${sidebarWidth}px` : "0px",
       }}
     >
-      <div className="flex h-16 items-center px-6 gap-4">
+      <div className="flex h-16 items-center px-2 sm:px-4 md:px-6 gap-1 sm:gap-2 md:gap-4 min-w-0 w-full">
         {/* Menu Button (Mobile Only) */}
         <Button
           variant="ghost"
@@ -104,15 +104,15 @@ const Navbar = ({ onMenuClick, sidebarOpen, sidebarCollapsed, sidebarWidth, isDe
         </Button>
 
         {/* Logo - Mobile Only */}
-        <div className="flex items-center gap-2.5 lg:hidden">
-          <div className="h-9 w-9 rounded-xl bg-linear-to-br from-primary to-primary/80 flex items-center justify-center shadow-md">
-            <span className="text-primary-foreground font-bold text-lg">T</span>
+        <div className="flex items-center gap-1.5 sm:gap-2 lg:hidden shrink-0">
+          <div className="h-7 w-7 sm:h-8 sm:w-8 rounded-lg sm:rounded-xl bg-linear-to-br from-primary to-primary/80 flex items-center justify-center shadow-md">
+            <span className="text-primary-foreground font-bold text-xs sm:text-sm">T</span>
           </div>
-          <span className="font-bold text-lg tracking-tight">Tasklyx</span>
+          <span className="font-bold text-sm sm:text-base tracking-tight hidden sm:block">Tasklyx</span>
         </div>
 
         {/* Search - Desktop */}
-        <div className="flex-1 max-w-xl hidden md:block ml-2">
+        <div className="flex-1 max-w-xl hidden md:block ml-2 min-w-0">
           <div className="relative">
             <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
             <Input
@@ -153,7 +153,7 @@ const Navbar = ({ onMenuClick, sidebarOpen, sidebarCollapsed, sidebarWidth, isDe
         <Button
           variant="ghost"
           size="icon"
-          className="md:hidden ml-auto"
+          className="md:hidden shrink-0"
           onClick={() => {
             setShowSearch(!showSearch);
             if (!showSearch) {
@@ -280,36 +280,54 @@ const Navbar = ({ onMenuClick, sidebarOpen, sidebarCollapsed, sidebarWidth, isDe
         </div>
 
         {/* Mobile Right Section */}
-        <div className="flex md:hidden items-center gap-2">
+        <div className="flex md:hidden items-center gap-0.5 sm:gap-1 shrink-0 ml-auto">
+          {/* Meeting Button (Mobile) */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-9 w-9 sm:h-10 sm:w-10 hover:bg-primary/10 hover:text-primary transition-colors shrink-0"
+            onClick={() => router.push("/meetings")}
+            title="Meetings"
+          >
+            <Video className="h-4 w-4 sm:h-5 sm:w-5" />
+          </Button>
+          
           {/* AI Assistant Button (Mobile) */}
           <Button
             variant="ghost"
             size="icon"
-            className="hover:bg-primary/10 hover:text-primary transition-colors relative"
+            className="h-9 w-9 sm:h-10 sm:w-10 hover:bg-primary/10 hover:text-primary transition-colors shrink-0"
             onClick={() => router.push("/ai-chat")}
             title="AI Assistant"
           >
-            <Bot className="h-5 w-5" />
+            <Bot className="h-4 w-4 sm:h-5 sm:w-5" />
           </Button>
-          <ThemeToggle />
-          <NotificationsDropdown />
-          <div className="relative" ref={mobileMenuRef}>
+          
+          <div className="shrink-0">
+            <ThemeToggle />
+          </div>
+          <div className="shrink-0">
+            <NotificationsDropdown />
+          </div>
+          
+          <div className="relative shrink-0" ref={mobileMenuRef}>
             <button
               onClick={() => setShowUserMenu(!showUserMenu)}
-              className="flex items-center"
+              className="flex items-center shrink-0 p-0.5"
+              aria-label="User menu"
             >
               <Avatar
                 name={user?.name || "User"}
                 src={user?.avatar}
-                size="default"
-                className="cursor-pointer"
+                size="sm"
+                className="cursor-pointer h-8 w-8 sm:h-9 sm:w-9"
               />
             </button>
             {showUserMenu && (
-              <div className="absolute right-0 top-12 bg-card border border-border/50 rounded-xl shadow-xl z-100 min-w-[220px] max-w-[calc(100vw-2rem)] animate-in fade-in slide-in-from-top-2 duration-200">
-                <div className="p-4 border-b border-border/50">
-                  <p className="font-semibold text-sm text-foreground">{user?.name}</p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{user?.email}</p>
+              <div className="absolute right-0 top-12 bg-card border border-border/50 rounded-xl shadow-xl z-[100] min-w-[180px] max-w-[calc(100vw-2rem)] animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="p-3 sm:p-4 border-b border-border/50">
+                  <p className="font-semibold text-sm text-foreground truncate">{user?.name || "User"}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5 truncate">{user?.email || ""}</p>
                 </div>
                 <div className="p-2">
                   <button
@@ -317,8 +335,8 @@ const Navbar = ({ onMenuClick, sidebarOpen, sidebarCollapsed, sidebarWidth, isDe
                     onClick={(e) => handleLogout(e)}
                     className="w-full flex items-center gap-2.5 px-3 py-2.5 text-sm hover:bg-destructive/10 rounded-lg text-left text-destructive transition-colors font-medium"
                   >
-                    <LogOut className="h-4 w-4" />
-                    Logout
+                    <LogOut className="h-4 w-4 shrink-0" />
+                    <span>Logout</span>
                   </button>
                 </div>
               </div>
