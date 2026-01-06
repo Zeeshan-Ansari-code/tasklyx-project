@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { Video, Phone, X } from "lucide-react";
 import Button from "@/components/ui/Button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/Card";
@@ -92,8 +93,8 @@ export default function IncomingCallModal({
     onReject();
   };
 
-  return (
-    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-[9999]">
+  const modalContent = (
+    <div className="fixed inset-0 bg-black/80 flex items-center justify-center z-99999 p-4">
       <Card className="w-full max-w-md animate-pulse">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
@@ -138,5 +139,12 @@ export default function IncomingCallModal({
       </Card>
     </div>
   );
+
+  // Use portal to render at body level for proper centering
+  if (typeof window !== "undefined") {
+    return createPortal(modalContent, document.body);
+  }
+  
+  return modalContent;
 }
 

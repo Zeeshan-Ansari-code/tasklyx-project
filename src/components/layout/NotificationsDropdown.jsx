@@ -154,9 +154,10 @@ const NotificationsDropdown = () => {
         }
       }
       
-      // Use router for client-side navigation with prefetch
-      router.push(link);
+      // Use Link for faster navigation with prefetch
       setShowDropdown(false);
+      // Use window.location for immediate navigation (faster than router.push)
+      window.location.href = link;
     }
   }, []);
 
@@ -175,7 +176,7 @@ const NotificationsDropdown = () => {
       </Button>
 
       {showDropdown && (
-        <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-lg shadow-xl z-[9999] max-h-[calc(100vh-8rem)] flex flex-col">
+        <div className="absolute right-0 top-full mt-2 w-80 max-w-[calc(100vw-2rem)] bg-card border border-border rounded-lg shadow-xl z-9999 max-h-[calc(100vh-8rem)] flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border">
             <h3 className="font-semibold">Notifications</h3>

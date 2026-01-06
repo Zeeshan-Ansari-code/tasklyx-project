@@ -63,13 +63,15 @@ const SearchDropdown = ({ isOpen, onClose, searchQuery }) => {
   }, [isOpen, onClose]);
 
   const handleBoardClick = (boardId) => {
-    router.push(`/boards/${boardId}`);
     onClose();
+    // Use window.location for faster navigation
+    window.location.href = `/boards/${boardId}`;
   };
 
   const handleTaskClick = (task) => {
-    router.push(`/boards/${task.board._id}?task=${task._id}`);
     onClose();
+    // Use window.location for faster navigation
+    window.location.href = `/boards/${task.board._id}?task=${task._id}`;
   };
 
   const totalResults = results.boards.length + results.tasks.length;

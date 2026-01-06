@@ -167,67 +167,73 @@ const Navbar = ({ onMenuClick, sidebarOpen, sidebarCollapsed, sidebarWidth, isDe
 
         <div className="hidden md:flex items-center gap-3 ml-auto">
           {/* AI Assistant Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hidden sm:flex hover:bg-primary/10 transition-colors"
-            onClick={() => router.push("/ai-chat")}
-            title="AI Assistant"
-          >
-            <Bot className="h-4 w-4 mr-2" />
-            <span className="text-primary font-medium">
-              AI
-            </span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="sm:hidden hover:bg-primary/10 hover:text-primary transition-colors"
-            onClick={() => router.push("/ai-chat")}
-            title="AI Assistant"
-          >
-            <Bot className="h-5 w-5" />
-          </Button>
+          <Link href="/ai-chat" prefetch={true}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:flex hover:bg-primary/10 transition-colors"
+              title="AI Assistant"
+            >
+              <Bot className="h-4 w-4 mr-2" />
+              <span className="text-primary font-medium">
+                AI
+              </span>
+            </Button>
+          </Link>
+          <Link href="/ai-chat" prefetch={true}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="sm:hidden hover:bg-primary/10 hover:text-primary transition-colors"
+              title="AI Assistant"
+            >
+              <Bot className="h-5 w-5" />
+            </Button>
+          </Link>
 
           {/* Meetings Button */}
-          <Button
-            variant="ghost"
-            size="sm"
-            className="hidden sm:flex hover:bg-primary/10 transition-colors"
-            onClick={() => router.push("/meetings")}
-            title="Meetings"
-          >
-            <Video className="h-4 w-4 mr-2" />
-            <span className="text-primary font-medium">
-              Meeting
-            </span>
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="sm:hidden hover:bg-primary/10 hover:text-primary transition-colors"
-            onClick={() => router.push("/meetings")}
-            title="Meetings"
-          >
-            <Video className="h-5 w-5" />
-          </Button>
+          <Link href="/meetings" prefetch={true}>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="hidden sm:flex hover:bg-primary/10 transition-colors"
+              title="Meetings"
+            >
+              <Video className="h-4 w-4 mr-2" />
+              <span className="text-primary font-medium">
+                Meeting
+              </span>
+            </Button>
+          </Link>
+          <Link href="/meetings" prefetch={true}>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="sm:hidden hover:bg-primary/10 hover:text-primary transition-colors"
+              title="Meetings"
+            >
+              <Video className="h-5 w-5" />
+            </Button>
+          </Link>
 
           {/* Create Button */}
-          <Button 
-            size="sm" 
-            className="hidden sm:flex shadow-sm hover:shadow-md transition-shadow"
-            onClick={() => router.push("/boards?create=true")}
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create
-          </Button>
-          <Button 
-            size="icon" 
-            className="sm:hidden hover:bg-primary/90 transition-colors"
-            onClick={() => router.push("/boards?create=true")}
-          >
-            <Plus className="h-5 w-5" />
-          </Button>
+          <Link href="/boards?create=true" prefetch={true}>
+            <Button 
+              size="sm" 
+              className="hidden sm:flex shadow-sm hover:shadow-md transition-shadow"
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Create
+            </Button>
+          </Link>
+          <Link href="/boards?create=true" prefetch={true}>
+            <Button 
+              size="icon" 
+              className="sm:hidden hover:bg-primary/90 transition-colors"
+            >
+              <Plus className="h-5 w-5" />
+            </Button>
+          </Link>
 
           {/* Theme Toggle */}
           <ThemeToggle />
@@ -250,7 +256,7 @@ const Navbar = ({ onMenuClick, sidebarOpen, sidebarCollapsed, sidebarWidth, isDe
             </button>
 
             {showUserMenu && (
-              <div className="absolute right-0 top-full mt-2 bg-card border border-border/50 rounded-xl shadow-xl z-[9999] min-w-[220px] max-w-[calc(100vw-2rem)] animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute right-0 top-full mt-2 bg-card border border-border/50 rounded-xl shadow-xl z-9999 min-w-[220px] max-w-[calc(100vw-2rem)] animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="p-4 border-b border-border/50">
                   <p className="font-semibold text-sm text-foreground">{user?.name}</p>
                   <p className="text-xs text-muted-foreground mt-0.5">{user?.email}</p>
@@ -326,7 +332,7 @@ const Navbar = ({ onMenuClick, sidebarOpen, sidebarCollapsed, sidebarWidth, isDe
               />
             </button>
             {showUserMenu && (
-              <div className="absolute right-0 top-full mt-2 bg-card border border-border/50 rounded-xl shadow-xl z-[9999] min-w-[180px] max-w-[calc(100vw-2rem)] animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="absolute right-0 top-full mt-2 bg-card border border-border/50 rounded-xl shadow-xl z-9999 min-w-[180px] max-w-[calc(100vw-2rem)] animate-in fade-in slide-in-from-top-2 duration-200">
                 <div className="p-3 sm:p-4 border-b border-border/50">
                   <p className="font-semibold text-sm text-foreground truncate">{user?.name || "User"}</p>
                   <p className="text-xs text-muted-foreground mt-0.5 truncate">{user?.email || ""}</p>

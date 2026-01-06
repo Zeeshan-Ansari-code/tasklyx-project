@@ -21,10 +21,19 @@ const nextConfig = {
   // Experimental features for better performance
   experimental: {
     optimizePackageImports: ['lucide-react', 'framer-motion'],
+    // Enable faster page transitions
+    optimizeCss: true,
   },
 
   // Turbopack configuration (Next.js 16+ uses Turbopack by default)
   turbopack: {},
+  
+  // Reduce JavaScript bundle size
+  compiler: {
+    removeConsole: process.env.NODE_ENV === 'production' ? {
+      exclude: ['error', 'warn'],
+    } : false,
+  },
 };
 
 export default nextConfig;

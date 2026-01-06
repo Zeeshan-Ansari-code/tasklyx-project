@@ -71,8 +71,8 @@ const Sidebar = ({ isOpen, onClose, collapsed: externalCollapsed, onCollapseChan
   };
 
   const handleCreateBoard = () => {
-    router.push("/boards");
-    // The boards page will handle opening the create modal
+    // Use Link navigation for faster routing
+    window.location.href = "/boards?create=true";
   };
 
   const menuItems = [

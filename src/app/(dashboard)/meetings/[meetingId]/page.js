@@ -758,26 +758,62 @@ export default function MeetingPage() {
       });
       localStreamRef.current = stream;
       setLocalStream(stream);
+      
+      // Set up local video element properly
       if (localVideoRef.current) {
-        // Set srcObject first
-        localVideoRef.current.srcObject = stream;
-        // Force video to be visible and ensure it renders
-        if (localVideoRef.current.style) {
-          localVideoRef.current.style.display = 'block';
-          localVideoRef.current.style.visibility = 'visible';
-          localVideoRef.current.style.opacity = '1';
+        const video = localVideoRef.current;
+        
+        // Stop any existing stream tracks first
+        if (video.srcObject) {
+          const oldStream = video.srcObject;
+          oldStream.getTracks().forEach(track => track.stop());
         }
-        // Wait a bit before playing to avoid interrupting load
-        setTimeout(() => {
-          if (localVideoRef.current && localVideoRef.current.srcObject === stream) {
-            localVideoRef.current.play().catch((err) => {
-              // Ignore AbortError - it's expected if srcObject changes
+        
+        // Set new stream
+        video.srcObject = stream;
+        video.muted = true; // Always mute local video to prevent feedback
+        video.autoplay = true;
+        video.playsInline = true;
+        
+        // Force video to be visible
+        video.style.display = 'block';
+        video.style.visibility = 'visible';
+        video.style.opacity = '1';
+        video.style.width = '100%';
+        video.style.height = '100%';
+        
+        // Multiple play attempts to ensure it works
+        const playVideo = () => {
+          if (video && video.srcObject === stream && video.paused) {
+            video.play().catch((err) => {
               if (err?.name !== 'AbortError') {
-                console.error("Error playing local video:", err);
+                // Retry after a short delay
+                setTimeout(playVideo, 200);
               }
             });
           }
-        }, 100);
+        };
+        
+        // Try playing immediately
+        playVideo();
+        
+        // Also try on loadedmetadata
+        const handleLoadedMetadata = () => {
+          playVideo();
+        };
+        
+        // Also try on canplay
+        const handleCanPlay = () => {
+          playVideo();
+        };
+        
+        video.addEventListener('loadedmetadata', handleLoadedMetadata);
+        video.addEventListener('canplay', handleCanPlay);
+        
+        // Fallback play attempts
+        setTimeout(playVideo, 100);
+        setTimeout(playVideo, 500);
+        setTimeout(playVideo, 1000);
       }
       
       // Update all existing peer connections with new stream
@@ -1179,18 +1215,18 @@ export default function MeetingPage() {
   return (
     <div className="fixed inset-0 flex flex-col bg-background z-50">
       {/* Main Video Area */}
-      <div className={`flex-1 flex flex-col ${showChat ? "w-2/3" : "w-full"}`}>
+      <div className={`flex-1 flex flex-col ${showChat ? "w-full md:w-2/3" : "w-full"}`}>
         {/* Header */}
-        <div className="bg-card border-b border-border p-4 flex items-center justify-between">
-          <div>
-            <h1 className="text-xl font-bold">{meeting.title}</h1>
-            <p className="text-sm text-muted-foreground">
+        <div className="bg-card border-b border-border p-2 sm:p-4 flex items-center justify-between gap-2">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-base sm:text-xl font-bold truncate">{meeting.title}</h1>
+            <p className="text-xs sm:text-sm text-muted-foreground">
               {meeting.participants?.filter((p) => p?.status === "joined")?.length || 0} participants
             </p>
           </div>
-          <Button variant="destructive" onClick={leaveMeeting}>
-            <X className="h-4 w-4 mr-2" />
-            Leave
+          <Button variant="destructive" size="sm" className="shrink-0" onClick={leaveMeeting}>
+            <X className="h-4 w-4 sm:mr-2" />
+            <span className="hidden sm:inline">Leave</span>
           </Button>
         </div>
 
@@ -1245,25 +1281,25 @@ export default function MeetingPage() {
 
         {/* Regular Video Grid (when no screen sharing) */}
         {!sharedScreenStream && (
-          <div className="flex-1 grid grid-cols-2 gap-4 p-4">
+          <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 p-2 sm:p-4 overflow-y-auto">
             {/* Local Video */}
-            <Card className="relative bg-black rounded-lg overflow-hidden">
+            <Card className="relative bg-black rounded-lg overflow-hidden aspect-video sm:aspect-auto sm:min-h-[200px]">
               <video
                 ref={localVideoRef}
                 autoPlay
                 playsInline
                 muted
-                className="w-full h-full object-cover min-h-[200px]"
-                style={{ transform: 'scaleX(-1)', zIndex: 1 }}
+                className="w-full h-full object-cover"
+                style={{ transform: 'scaleX(-1)' }}
               />
-              <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm z-10">
+              <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs sm:text-sm z-10">
                 {user?.name || "You"} (You)
               </div>
               {!cameraOn && (
                 <div className="absolute inset-0 flex items-center justify-center bg-black z-20">
                   <div className="text-white text-center">
-                    <VideoOff className="h-12 w-12 mx-auto mb-2" />
-                    <p>Camera Off</p>
+                    <VideoOff className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2" />
+                    <p className="text-xs sm:text-base">Camera Off</p>
                   </div>
                 </div>
               )}
@@ -1280,28 +1316,34 @@ export default function MeetingPage() {
               const participantName = typeof participant.user === 'object' ? participant.user?.name : "Unknown";
               const remoteStream = remoteStreams[participantId];
               
+              // Check if stream has active tracks
+              const hasActiveStream = remoteStream && (
+                remoteStream.getVideoTracks().some(t => t.readyState === 'live') ||
+                remoteStream.getAudioTracks().some(t => t.readyState === 'live')
+              );
+              
               return (
-                <Card key={participantId || `participant-${idx}`} className="relative bg-black rounded-lg overflow-hidden">
-                  {remoteStream ? (
+                <Card key={participantId || `participant-${idx}`} className="relative bg-black rounded-lg overflow-hidden aspect-video sm:aspect-auto sm:min-h-[200px]">
+                  {hasActiveStream ? (
                     <RemoteVideo
                       stream={remoteStream}
                       participantId={participantId}
                       participantName={participantName}
                     />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center min-h-[200px]">
+                    <div className="w-full h-full flex items-center justify-center aspect-video sm:aspect-auto sm:min-h-[200px]">
                       <div className="text-white text-center">
-                        <div className="h-20 w-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-2">
-                          <span className="text-2xl font-medium">
+                        <div className="h-16 w-16 sm:h-20 sm:w-20 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-2">
+                          <span className="text-xl sm:text-2xl font-medium">
                             {participantName?.[0]?.toUpperCase() || "U"}
                           </span>
                         </div>
-                        <p className="font-medium">{participantName}</p>
+                        <p className="font-medium text-sm sm:text-base">{participantName}</p>
                         <p className="text-xs text-gray-400 mt-1">Connecting...</p>
                       </div>
                     </div>
                   )}
-                  <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-sm">
+                  <div className="absolute bottom-2 left-2 bg-black/50 text-white px-2 py-1 rounded text-xs sm:text-sm">
                     {participantName}
                   </div>
                 </Card>
@@ -1313,11 +1355,11 @@ export default function MeetingPage() {
             const participantId = typeof p.user === 'object' ? p.user?._id : p.user;
             return participantId && participantId.toString() !== user.id?.toString();
           }).length === 0 && (
-            <Card className="relative bg-black rounded-lg overflow-hidden">
-              <div className="w-full h-full flex items-center justify-center min-h-[200px]">
+            <Card className="relative bg-black rounded-lg overflow-hidden aspect-video sm:aspect-auto sm:min-h-[200px]">
+              <div className="w-full h-full flex items-center justify-center">
                 <div className="text-white text-center">
-                  <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm opacity-75">Waiting for others to join...</p>
+                  <Users className="h-8 w-8 sm:h-12 sm:w-12 mx-auto mb-2 opacity-50" />
+                  <p className="text-xs sm:text-sm opacity-75">Waiting for others to join...</p>
                 </div>
               </div>
             </Card>
@@ -1360,7 +1402,7 @@ export default function MeetingPage() {
 
       {/* Chat Sidebar */}
       {showChat && (
-        <div className="w-full md:w-1/3 border-l border-border bg-card flex flex-col">
+        <div className="w-full md:w-1/3 border-l border-border bg-card flex flex-col fixed md:relative right-0 top-0 h-full z-40">
           <div className="p-4 border-b border-border">
             <h2 className="font-semibold">Meeting Chat</h2>
           </div>

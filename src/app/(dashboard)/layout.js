@@ -12,7 +12,6 @@ import { useTheme } from "@/context/ThemeContext";
 
 export default function DashboardLayout({ children }) {
   const router = useRouter();
-  const pathname = usePathname();
   const { user, loading } = useAuth();
   const { theme } = useTheme();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -125,10 +124,10 @@ export default function DashboardLayout({ children }) {
             <AnimatePresence mode="wait">
               <motion.div
                 key={pathname}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -8 }}
-                transition={{ duration: 0.18, ease: "easeOut" }}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.1, ease: "easeOut" }}
               >
                 {children}
               </motion.div>

@@ -428,8 +428,8 @@ export default function ChatPage() {
 
   return (
     <div className="flex h-[calc(100vh-8rem)] gap-4">
-      {/* Conversations List */}
-      <div className="w-80 border-r border-border bg-card p-4 flex flex-col">
+      {/* Conversations List - Hidden on mobile when conversation is selected */}
+      <div className={`w-full md:w-80 border-r border-border bg-card p-4 flex flex-col ${selectedConversation ? 'hidden md:flex' : 'flex'}`}>
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-bold">Messages</h2>
           <Button
@@ -580,44 +580,63 @@ export default function ChatPage() {
         </div>
       </div>
 
-      {/* Chat Area */}
-      <div className="flex-1 flex flex-col">
-      {loading ? (
-        <div className="flex-1 flex items-center justify-center">
-          <ChatSkeleton />
-        </div>
-      ) : selectedConversation ? (
-        <ChatWindow
-            conversation={selectedConversation}
-            messages={messages}
-            currentUser={user}
-            onMessageSent={() => fetchMessages(selectedConversation._id)}
-            messagesEndRef={messagesEndRef}
-            typingUsers={typingUsers}
-            pinnedMessages={pinnedMessages}
-            onPinMessage={async (messageId, action) => {
-              try {
-                const res = await fetch(`/api/conversations/${selectedConversation._id}/pin`, {
-                  method: "POST",
-                  headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({
-                    messageId,
-                    userId: user.id,
-                    action,
-                  }),
-                });
-                if (res.ok) {
-                  fetchPinnedMessages(selectedConversation._id);
+      {/* Chat Area - Full width on mobile when conversation is selected */}
+      <div className={`flex-1 flex flex-col ${selectedConversation ? 'flex' : 'hidden md:flex'}`}>
+        {loading ? (
+          <div className="flex-1 flex items-center justify-center">
+            <ChatSkeleton />
+          </div>
+        ) : selectedConversation ? (
+          <>
+            {/* Back button for mobile */}
+            <div className="md:hidden p-3 border-b border-border bg-card flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setSelectedConversation(null)}
+              >
+                <X className="h-5 w-5" />
+              </Button>
+              <div className="flex-1">
+                <h3 className="font-semibold truncate">
+                  {selectedConversation?.type === "group"
+                    ? selectedConversation?.name || "Unnamed Group"
+                    : selectedConversation?.participants?.find((p) => (p?._id || p) !== user?.id)?.name || "Unknown"}
+                </h3>
+              </div>
+            </div>
+            <ChatWindow
+              conversation={selectedConversation}
+              messages={messages}
+              currentUser={user}
+              onMessageSent={() => fetchMessages(selectedConversation._id)}
+              messagesEndRef={messagesEndRef}
+              typingUsers={typingUsers}
+              pinnedMessages={pinnedMessages}
+              onPinMessage={async (messageId, action) => {
+                try {
+                  const res = await fetch(`/api/conversations/${selectedConversation._id}/pin`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      messageId,
+                      userId: user.id,
+                      action,
+                    }),
+                  });
+                  if (res.ok) {
+                    fetchPinnedMessages(selectedConversation._id);
+                  }
+                } catch (error) {
+                  toast.error("Failed to pin message");
                 }
-              } catch (error) {
-                toast.error("Failed to pin message");
-              }
-            }}
-            onSearch={handleSearch}
-            searchResults={messageSearchResults}
-            showSearch={showSearch}
-            setShowSearch={setShowSearch}
-          />
+              }}
+              onSearch={handleSearch}
+              searchResults={messageSearchResults}
+              showSearch={showSearch}
+              setShowSearch={setShowSearch}
+            />
+          </>
         ) : (
           <div className="flex-1 flex items-center justify-center text-muted-foreground">
             <div className="text-center">
